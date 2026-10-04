@@ -1,5 +1,6 @@
 import { CATEGORIES, DRILLS, SOURCES } from "./drills.js";
 import { QUIZ, QUOTES, CHALLENGES, XP, BADGES, METRICS, TIERS } from "./data.js";
+import { TRACKS, LESSONS } from "./lessons.js";
 import { dateKey, parseKey, addDays, prettyDate, weekdayOf, weekKey, hashString, DAY_NAMES, formatTime, SESSION_TYPES, programName, recommendSchedule, weeklyFocus, sleepTarget, drill, isProDrill, buildWorkout, isShootingDrill, nutritionTargets, buildMealPlan, planMeal, sleepHours, levelInfo, rankFor, isTrainingDay, streak, bestStreak, ratings } from "./engine.js";
 import { cloud, initCloud, hasSocial, loadPrivate, savePrivate, publishCard, watchCollection, saveMyFeed, saveMyCheers, saveMyComments, removeOthersPost, uploadMedia, saveFile, hasAI, askCoach } from "./cloud.js";
 
@@ -34,6 +35,8 @@ const fresh = () => ({
   settings: { aiCoach: true },
   notified: {},
   coachChat: [],
+  lessonsDone: {}, // id -> { quiz: true|false }
+  seenStories: [],
   updatedAt: 0,
 });
 
@@ -55,6 +58,7 @@ function prune() {
   state.coachChat = cut(state.coachChat, 20);
   state.keptDates = cut(state.keptDates, 400);
   state.missedDates = cut(state.missedDates, 400);
+  state.seenStories = cut(state.seenStories, 300);
   const keepKeys = (obj, days) => {
     const min = addDays(dateKey(), -days);
     for (const k of Object.keys(obj)) if (k < min) delete obj[k];
@@ -117,6 +121,7 @@ const ICONS = {
   ranks: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/>',
   me: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
   coach: '<path d="M4 5h16v10H9l-5 4z"/><path d="M9 9h6M9 12h4"/>',
+  learn: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M9 7h6M9 11h6"/>',
 };
 const icon = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
 
@@ -561,7 +566,9 @@ function viewHome() {
     { done: challengeDone, label: challengeOfTheDay(), xp: XP.challenge, action: "challenge" },
     { done: postedToday, label: "Share a post or story", xp: XP.post, href: "#feed" },
   ];
+  const nextLesson = LESSONS.find((l) => !state.lessonsDone[l.id]);
   return `
+  ${storiesBar()}
   ${hud()}
 
   ${reminderDue() ? `<a class="banner" href="#train"><strong>It's past ${formatTime(e.time)}. Time to train.</strong><span>Your ${type.label} is waiting →</span></a>` : ""}
@@ -586,6 +593,11 @@ function viewHome() {
     </ul>
   </section>
 
+  ${nextLesson ? `<a class="lesson-tile" href="#lesson-${nextLesson.id}" style="--c:${rankFor(levelInfo(state.xp).level).color}">
+    <div><p class="eyebrow">Next lesson · ${TRACKS[nextLesson.track].label}</p><strong>${esc(nextLesson.title)}</strong><span class="muted small">${nextLesson.minutes} min read · +${XP.lesson + XP.quiz} XP</span></div>
+    <span class="lesson-go" aria-hidden="true">→</span>
+  </a>` : ""}
+
   <a class="panel ovr-mini" href="#ranks">
     <div class="ovr-num"><span class="num">${R.ovr}</span><small>OVR</small></div>
     <div class="ovr-parts">${Object.entries(R.parts).map(([k, v]) => `<div><span class="num">${v}</span><small>${k}</small></div>`).join("")}</div>
@@ -599,6 +611,7 @@ function viewHome() {
 function viewCoachHome() {
   const players = live.players.filter((p) => p.role === "player" && p.week === weekKey()).sort((a, b) => (b.weekXp || 0) - (a.weekXp || 0)).slice(0, 5);
   return `
+  ${storiesBar()}
   ${hud()}
   <section class="mission">
     <div class="mission-head">
@@ -924,13 +937,83 @@ function workoutCardHtml(c) {
     <div class="result-stats small-stats"><div><span class="num">${Number(c.minutes) || 0}</span><small>min</small></div><div><span class="num">${Number(c.drills) || 0}</span><small>drills</small></div><div><span class="num">${c.shots ? `${Number(c.makes) || 0}/${Number(c.shots)}` : "—"}</span><small>shots</small></div><div><span class="num">${Number(c.streak) || 0}</span><small>streak</small></div></div></div>`;
 }
 
+const STORY_BGS = ["ember", "court", "night", "gold"];
+
+function storiesBar() {
+  const dayAgo = Date.now() - 86400000;
+  const stories = allPosts().filter((p) => p.kind === "story" && p.ts > dayAgo);
+  const authors = [];
+  for (const p of stories) {
+    let a = authors.find((x) => x.uid === p.uid);
+    if (!a) authors.push((a = { uid: p.uid, handle: p.handle, color: p.color, mine: p.mine, keys: [] }));
+    a.keys.push(postKey(p));
+  }
+  authors.forEach((a) => (a.seen = !a.mine && a.keys.every((k) => state.seenStories.includes(k))));
+  authors.sort((a, b) => (b.mine ? 2 : 0) + (a.seen ? 1 : 0) - ((a.mine ? 2 : 0) + (b.seen ? 1 : 0)));
+  const myColor = rankFor(levelInfo(state.xp).level).color;
+  return `<div class="stories" aria-label="Stories">
+    <button class="story-av add" data-action="compose-story">${avatar(state.profile.handle, myColor, "lg")}<span>${authors.some((a) => a.mine) ? "Add" : "Your story"}</span></button>
+    ${authors.map((a) => `<button class="story-av ring ${a.seen ? "seen" : ""}" data-action="open-story" data-uid="${esc(a.uid)}">${avatar(a.handle, a.color, "lg")}<span>${a.mine ? "You" : esc(a.handle)}</span></button>`).join("")}
+    ${!authors.length ? `<p class="stories-empty muted small">No stories yet today. Post a workout or a win.</p>` : ""}
+  </div>`;
+}
+
+function openStoryComposer() {
+  closeStoryComposer();
+  const r = rankFor(levelInfo(state.xp).level);
+  const last = isPlayer() ? state.workouts[state.workouts.length - 1] : null;
+  const el = document.createElement("div");
+  el.className = "overlay story-composer";
+  el.style.setProperty("--c", r.color);
+  el.innerHTML = `<form class="game-card composer-card" id="story-form">
+    <div class="row-between"><p class="eyebrow">New story · gone in 24 hours</p><button type="button" class="link" data-action="story-cancel" aria-label="Close">✕</button></div>
+    <div class="story-preview" data-bg="ember" id="story-preview">
+      <label class="sr" for="story-text">Story text</label>
+      <textarea id="story-text" maxlength="200" rows="4" placeholder="What did you work on today?"></textarea>
+      <p class="story-rank">${esc(r.label)}</p>
+    </div>
+    <div class="bg-picks" role="radiogroup" aria-label="Background">${STORY_BGS.map((b, i) => `<button type="button" class="bg-pick ${i === 0 ? "active" : ""}" data-action="story-bg" data-bg="${b}" aria-label="${b} background"></button>`).join("")}</div>
+    <div class="composer-row">
+      ${cloud.assets ? `<label class="btn small ghost file-btn" for="story-media">Add photo or video<input id="story-media" type="file" accept="image/*,video/*" hidden></label>` : ""}
+      ${last ? `<label class="switch" for="story-attach"><input id="story-attach" type="checkbox" ${last.date === today() ? "checked" : ""}><span>Attach today's workout</span></label>` : ""}
+    </div>
+    <button class="btn primary big" type="submit">Share to story</button>
+  </form>`;
+  document.body.appendChild(el);
+  el.querySelector("#story-text").focus();
+}
+
+function closeStoryComposer() {
+  document.querySelector(".story-composer")?.remove();
+}
+
+async function submitStory(form) {
+  const text = form.querySelector("#story-text").value.trim();
+  const file = form.querySelector("#story-media")?.files?.[0];
+  const attach = form.querySelector("#story-attach")?.checked;
+  const bg = form.querySelector(".bg-pick.active")?.dataset.bg || "ember";
+  if (!text && !file && !attach) return toast("Add some text, a photo, or your workout.");
+  const btn = form.querySelector("button[type=submit]");
+  btn.disabled = true;
+  let media = null;
+  if (file) {
+    btn.textContent = "Uploading…";
+    try {
+      const res = await uploadMedia(file);
+      media = { id: res.id, type: file.type.startsWith("video") ? "video" : "image" };
+    } catch {
+      btn.disabled = false;
+      btn.textContent = "Share to story";
+      return toast("Upload failed. Try a smaller file.");
+    }
+  }
+  const last = state.workouts[state.workouts.length - 1];
+  closeStoryComposer();
+  addPost({ kind: "story", text: text.slice(0, 200), bg, media, card: attach && last ? cardFromWorkout(last) : null });
+}
+
 function viewFeed() {
   const posts = allPosts();
-  const dayAgo = Date.now() - 86400000;
-  const stories = posts.filter((p) => p.kind === "story" && p.ts > dayAgo);
-  const storyAuthors = [];
-  for (const p of stories) if (!storyAuthors.find((a) => a.uid === p.uid)) storyAuthors.push({ uid: p.uid, handle: p.handle, color: p.color, mine: p.mine });
-  storyAuthors.sort((a, b) => (b.mine ? 1 : 0) - (a.mine ? 1 : 0));
   const filters = { all: "All", drill: "Drills", advice: "Advice", win: "Wins", coach: "Coaches" };
   const list = posts.filter((p) => p.kind !== "story").filter((p) => feedFilter === "all" || (feedFilter === "coach" ? p.role === "coach" : p.kind === feedFilter));
   const kinds = { drill: "Drill", advice: "Advice", win: "Win", story: "Story (24h)" };
@@ -938,10 +1021,7 @@ function viewFeed() {
   return `
   <section class="page-head"><p class="eyebrow">Community</p><h1 class="display">Feed</h1></section>
 
-  <div class="stories">
-    ${!storyAuthors.some((a) => a.mine) ? `<button class="story-av add" data-action="compose-story">${avatar(state.profile.handle, rankFor(levelInfo(state.xp).level).color, "lg")}<span>Your story</span></button>` : ""}
-    ${storyAuthors.map((a) => `<button class="story-av ring" data-action="open-story" data-uid="${esc(a.uid)}">${avatar(a.handle, a.color, "lg")}<span>${a.mine ? "Your story" : esc(a.handle)}</span></button>`).join("")}
-  </div>
+  ${storiesBar()}
 
   ${!hasSocial() ? `<p class="notice small">You're seeing only your own posts. Open Courtside from its Claude link to see posts from other players and coaches.</p>` : ""}
 
@@ -1059,13 +1139,18 @@ function drawStory() {
   el.innerHTML = `
     <div class="story-bars">${items.map((_, j) => `<span class="${j < i ? "full" : j === i ? "run" : ""}"></span>`).join("")}</div>
     <div class="story-top">${avatar(p.handle, p.color)}<strong>${esc(p.handle)}</strong><small>${timeAgo(p.ts)}</small><button class="link" data-close aria-label="Close">✕</button></div>
-    <div class="story-body" style="--c:${safeColor(p.color)}">
+    <div class="story-body" data-bg="${STORY_BGS.includes(p.bg) ? p.bg : "ember"}" style="--c:${safeColor(p.color)}">
       ${p.card ? `<p class="eyebrow">Workout complete</p><h2 class="display">${esc(String(p.card.label || "").slice(0, 40))}</h2>
         <div class="story-stats"><div><span class="num">${Number(p.card.minutes) || 0}</span><small>minutes</small></div><div><span class="num">${p.card.shots ? `${Number(p.card.makes) || 0}/${Number(p.card.shots)}` : Number(p.card.drills) || 0}</span><small>${p.card.shots ? "shots made" : "drills"}</small></div><div><span class="num">${Number(p.card.streak) || 0}</span><small>day streak</small></div></div>` : ""}
       ${mediaHtml(p.media)}
       ${p.text ? `<p class="story-text">${esc(String(p.text).slice(0, 500))}</p>` : ""}
       <p class="story-rank">${esc(String(p.rank || "").slice(0, 20))}</p>
     </div>`;
+  const key = postKey(p);
+  if (!state.seenStories.includes(key)) {
+    state.seenStories.push(key);
+    storyView.seenChanged = true;
+  }
   clearTimeout(storyView.timer);
   storyView.timer = setTimeout(() => storyStep(1), 5000);
 }
@@ -1083,7 +1168,12 @@ function closeStory() {
   if (!storyView) return;
   clearTimeout(storyView.timer);
   storyView.el.remove();
+  const changed = storyView.seenChanged;
   storyView = null;
+  if (changed) {
+    save();
+    softRender();
+  }
 }
 
 // Story image sized for Instagram and TikTok stories (1080 × 1920)
@@ -1145,6 +1235,169 @@ async function storyImage(w) {
   g.fillStyle = "rgba(255,255,255,0.7)";
   g.fillText(`+${w.xp} XP`, 540, 1690);
   return new Promise((res) => c.toBlob(res, "image/png"));
+}
+
+// ---------- Learn ----------
+
+let learnTab = "lessons";
+let learnTrack = "all";
+let drillCat = "all";
+let drillPro = false;
+let drillQuery = "";
+let openDrill = null;
+
+function trackProgress(track) {
+  const list = LESSONS.filter((l) => l.track === track);
+  return { done: list.filter((l) => state.lessonsDone[l.id]).length, total: list.length };
+}
+
+function viewLearn() {
+  const r = rankFor(levelInfo(state.xp).level);
+  const done = LESSONS.filter((l) => state.lessonsDone[l.id]).length;
+  const tracks = Object.keys(TRACKS);
+  return `
+  <section class="page-head"><p class="eyebrow">Library</p><h1 class="display">Learn</h1></section>
+
+  <section class="game-card" style="--c:${r.color}">
+    <div class="pc-top">
+      <div class="pc-ovr"><span class="num">${done}</span><small>of ${LESSONS.length}</small></div>
+      <div class="pc-id"><strong class="display">Film Room</strong><span>Lessons and drills from the pros, college programs and sports science</span></div>
+      <div class="pc-tier">${done === LESSONS.length ? "Graduate" : `+${XP.lesson + XP.quiz} XP each`}</div>
+    </div>
+    <div class="pc-parts" style="grid-template-columns:repeat(4,1fr)">
+      ${tracks.map((t) => { const pr = trackProgress(t); return `<div><span class="num">${pr.done}/${pr.total}</span><small>${TRACKS[t].label}</small></div>`; }).join("")}
+      <div><span class="num">${DRILLS.length}</span><small>Drills</small></div>
+    </div>
+  </section>
+
+  <div class="seg" role="tablist">
+    <button class="${learnTab === "lessons" ? "active" : ""}" data-action="learn-tab" data-tab="lessons" role="tab">Lessons</button>
+    <button class="${learnTab === "drills" ? "active" : ""}" data-action="learn-tab" data-tab="drills" role="tab">Drill library</button>
+  </div>
+
+  ${learnTab === "lessons" ? lessonsList() : drillLibrary()}`;
+}
+
+function lessonsList() {
+  const tracks = Object.keys(TRACKS).filter((t) => learnTrack === "all" || learnTrack === t);
+  return `
+  <div class="chips">${["all", ...Object.keys(TRACKS)].map((t) => `<button class="chip ${learnTrack === t ? "active" : ""}" data-action="learn-track" data-track="${t}">${t === "all" ? "All" : TRACKS[t].label}</button>`).join("")}</div>
+  ${tracks.map((t) => {
+    const pr = trackProgress(t);
+    return `
+    <section class="track track-${t}">
+      <div class="track-head">
+        <div><h2 class="display">${TRACKS[t].label}</h2><p class="muted small">${TRACKS[t].blurb}</p></div>
+        <span class="num track-count">${pr.done}/${pr.total}</span>
+      </div>
+      <div class="bar"><div style="width:${Math.round((pr.done / pr.total) * 100)}%"></div></div>
+      <ol class="lesson-list">
+        ${LESSONS.filter((l) => l.track === t).map((l, i) => {
+          const d = state.lessonsDone[l.id];
+          return `<li><a href="#lesson-${l.id}" class="lesson-row ${d ? "done" : ""}">
+            <span class="pos num">${d ? "✓" : i + 1}</span>
+            <span class="who"><strong>${esc(l.title)}</strong><small>${l.minutes} min${l.level > 1 ? " · Intermediate" : ""}</small></span>
+            <span class="xp-tag num">${d ? (d.quiz ? "Aced" : "Done") : `+${XP.lesson + XP.quiz}`}</span>
+          </a></li>`;
+        }).join("")}
+      </ol>
+    </section>`;
+  }).join("")}`;
+}
+
+function drillCardHtml(d, compact) {
+  const open = openDrill === d.id;
+  const inSession = isPlayer() && state.session && state.session.date === today() && state.session.drills.includes(d.id);
+  return `<li class="drill lib-drill ${isProDrill(d) ? "pro" : ""}">
+    <div class="drill-body">
+      <button class="drill-toggle" data-action="drill-open" data-id="${d.id}" aria-expanded="${open}">
+        <span class="drill-head"><strong>${esc(d.name)}</strong><span class="tag">${CATEGORIES[d.cat].label} · ${d.minutes} min</span></span>
+        ${isProDrill(d) ? `<span class="credit">${esc(d.src)}</span>` : ""}
+      </button>
+      ${open || compact ? `<p class="muted small">${esc(d.how)}</p>
+      <p class="small muted">${d.needs.length ? `Needs: ${d.needs.map((n) => ({ hoop: "a hoop", weights: "weights", partner: "a partner" })[n]).join(", ")}` : "No equipment needed"} · ${["", "Beginner", "Intermediate", "Advanced"][d.level]}</p>
+      ${isPlayer() ? `<div class="drill-tools">${inSession ? `<span class="tag">In today's session ✓</span>` : `<button class="btn small" data-action="add-drill" data-id="${d.id}">Add to today's session</button>`}</div>` : ""}` : ""}
+    </div>
+  </li>`;
+}
+
+function drillLibrary() {
+  const q = drillQuery.toLowerCase();
+  const list = DRILLS.filter((d) => (drillCat === "all" || d.cat === drillCat) && (!drillPro || isProDrill(d)) && (!q || `${d.name} ${d.src} ${d.how}`.toLowerCase().includes(q)));
+  return `
+  <div class="lib-tools">
+    <label class="sr" for="drill-search">Search drills</label>
+    <input id="drill-search" type="search" placeholder="Search drills, coaches or players" value="${esc(drillQuery)}" autocomplete="off">
+    <label class="switch" for="drill-pro"><input id="drill-pro" type="checkbox" ${drillPro ? "checked" : ""}><span>Pro & college</span></label>
+  </div>
+  <div class="chips">${["all", ...Object.keys(CATEGORIES)].map((c) => `<button class="chip ${drillCat === c ? "active" : ""}" data-action="drill-cat" data-cat="${c}">${c === "all" ? "All" : CATEGORIES[c].label}</button>`).join("")}</div>
+  <p class="muted small">${list.length} drill${list.length === 1 ? "" : "s"}. Tap one for details.</p>
+  <ul class="drills" id="drill-results">${list.map((d) => drillCardHtml(d)).join("") || `<li class="empty muted">No drills match. Try another search.</li>`}</ul>`;
+}
+
+let lessonAnswer = null; // { id, pick }
+
+function viewLesson(id) {
+  const l = LESSONS.find((x) => x.id === id);
+  if (!l) return viewLearn();
+  const r = rankFor(levelInfo(state.xp).level);
+  const d = state.lessonsDone[l.id];
+  const ans = lessonAnswer && lessonAnswer.id === l.id ? lessonAnswer.pick : d && d.quiz ? l.quiz.answer : null;
+  const answered = ans !== null && ans !== undefined;
+  const list = LESSONS.filter((x) => x.track === l.track);
+  const idx = list.indexOf(l);
+  const next = list[idx + 1] || LESSONS.find((x) => !state.lessonsDone[x.id] && x.id !== l.id);
+  return `
+  <a class="link" href="#learn">← Library</a>
+
+  <section class="game-card lesson-hero track-${l.track}" style="--c:${r.color}">
+    <p class="eyebrow">${TRACKS[l.track].label} · Lesson ${idx + 1} of ${list.length}</p>
+    <h1 class="display">${esc(l.title)}</h1>
+    <p class="muted">${esc(l.summary)}</p>
+    <div class="pc-parts" style="grid-template-columns:repeat(3,1fr)">
+      <div><span class="num">${l.minutes}</span><small>Min read</small></div>
+      <div><span class="num">${l.practice.length}</span><small>Drills</small></div>
+      <div><span class="num">+${XP.lesson + XP.quiz}</span><small>XP</small></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <p class="eyebrow">Key points</p>
+    <ul class="key-points">${l.points.map((pt) => `<li>${esc(pt)}</li>`).join("")}</ul>
+  </section>
+
+  ${l.practice.length ? `<section>
+    <h2 class="section-title">Practice it</h2>
+    <ul class="drills">${l.practice.map((pid) => drillCardHtml(drill(pid), true)).join("")}</ul>
+  </section>` : ""}
+
+  <section class="panel quiz-card">
+    <p class="eyebrow">Quick check · +${XP.quiz} XP</p>
+    <strong>${esc(l.quiz.q)}</strong>
+    <div class="options">${l.quiz.options.map((o, i) => {
+      const cls = answered ? (i === l.quiz.answer ? "right" : i === ans ? "wrong" : "") : "";
+      return `<button class="option ${cls}" data-action="lesson-answer" data-id="${l.id}" data-i="${i}" ${answered ? "disabled" : ""}><strong>${esc(o)}</strong>${cls === "right" ? `<span class="tick">✓</span>` : cls === "wrong" ? `<span class="tick">✕</span>` : ""}</button>`;
+    }).join("")}</div>
+    ${answered ? `<p class="small ${ans === l.quiz.answer ? "good-text" : "muted"}">${ans === l.quiz.answer ? "Correct." : "Not quite. The right answer is marked."}</p>` : ""}
+  </section>
+
+  <div class="actions">
+    ${d ? `<span class="btn ghost" aria-disabled="true">Lesson complete ✓</span>` : `<button class="btn primary" data-action="lesson-done" data-id="${l.id}">Complete lesson · +${XP.lesson} XP</button>`}
+    ${next ? `<a class="btn ghost" href="#lesson-${next.id}">Next: ${esc(next.title)}</a>` : ""}
+  </div>`;
+}
+
+function addDrillToSession(id) {
+  if (!isPlayer()) return;
+  const s = ensureSession();
+  if (s.finished) return toast("Today's session is already logged. Swap or shuffle tomorrow's from the Train tab.");
+  if (s.drills.includes(id)) return toast("Already in today's session");
+  const cool = s.drills.indexOf("cooldown");
+  if (cool >= 0) s.drills.splice(cool, 0, id);
+  else s.drills.push(id);
+  save();
+  toast(`${drill(id).name} added to today's session`);
+  render();
 }
 
 // ---------- Ranks ----------
@@ -1621,20 +1874,22 @@ async function offerFile(filename, data, okMsg) {
 
 // ---------- Router ----------
 
-const ROUTES = { home: viewHome, train: viewTrain, schedule: viewSchedule, fuel: viewFuel, sleep: viewSleep, feed: viewFeed, ranks: viewRanks, me: viewMe, plan: viewPlan, coach: viewCoach, quiz: viewQuiz };
+const ROUTES = { learn: viewLearn, lesson: () => viewLesson(location.hash.slice("#lesson-".length)), home: viewHome, train: viewTrain, schedule: viewSchedule, fuel: viewFuel, sleep: viewSleep, feed: viewFeed, ranks: viewRanks, me: viewMe, plan: viewPlan, coach: viewCoach, quiz: viewQuiz };
 const PLAYER_ONLY = ["train", "schedule", "fuel", "sleep", "plan"];
 
 function route() {
   const r = location.hash.replace("#", "") || "home";
+  if (r.startsWith("lesson-")) return "lesson";
   if (!ROUTES[r]) return "home";
   if (!isPlayer() && PLAYER_ONLY.includes(r)) return "home";
   return r;
 }
 
 function renderNav(r) {
-  const tabs = isPlayer() ? ["home", "train", "fuel", "feed", "ranks"] : ["home", "feed", "ranks", "me"];
-  const labels = { home: "Home", train: "Train", fuel: "Fuel", feed: "Feed", ranks: "Ranks", me: "Me" };
-  $("#nav").innerHTML = tabs.map((t) => `<a href="#${t}" class="${t === r ? "active" : ""}">${icon(t)}<span>${labels[t]}</span></a>`).join("");
+  const tabs = isPlayer() ? ["home", "train", "learn", "fuel", "feed", "ranks"] : ["home", "learn", "feed", "ranks", "me"];
+  const labels = { home: "Home", train: "Train", learn: "Learn", fuel: "Fuel", feed: "Feed", ranks: "Ranks", me: "Me" };
+  const activeTab = r === "lesson" ? "learn" : r;
+  $("#nav").innerHTML = tabs.map((t) => `<a href="#${t}" class="${t === activeTab ? "active" : ""}">${icon(t)}<span>${labels[t]}</span></a>`).join("");
   $("#topbar").innerHTML = `<span class="wordmark">COURTSIDE</span><div class="top-actions">
     ${hasAI() && state.settings.aiCoach ? `<a href="#coach" class="icon-btn ${r === "coach" ? "active" : ""}" aria-label="AI Coach">${icon("coach")}</a>` : ""}
     <a href="#me" class="icon-btn ${r === "me" ? "active" : ""}" aria-label="My profile">${icon("me")}</a></div>`;
@@ -1695,6 +1950,9 @@ function onSubmit(e) {
     award(XP.stat, "Stat logged");
     save();
     render();
+  } else if (f.id === "story-form") {
+    e.preventDefault();
+    submitStory(f);
   } else if (f.id === "post-form") {
     e.preventDefault();
     submitPost(f);
@@ -1742,6 +2000,9 @@ function onChange(e) {
     render();
   } else if (t.dataset.actionChange === "swap") {
     regenerateSession(t.value);
+    render();
+  } else if (t.id === "drill-pro") {
+    drillPro = t.checked;
     render();
   } else if (t.id === "post-media") {
     const n = $("#media-name");
@@ -1892,10 +2153,62 @@ function onClick(e) {
       render();
       break;
     case "compose-story":
-      composerKind = "story";
-      render();
-      $("#post-text")?.focus();
+      openStoryComposer();
       break;
+    case "story-cancel":
+      closeStoryComposer();
+      break;
+    case "story-bg": {
+      const form = btn.closest("form");
+      form.querySelectorAll(".bg-pick").forEach((b) => b.classList.toggle("active", b === btn));
+      form.querySelector("#story-preview").dataset.bg = btn.dataset.bg;
+      break;
+    }
+    case "learn-tab":
+      learnTab = btn.dataset.tab;
+      render();
+      break;
+    case "learn-track":
+      learnTrack = btn.dataset.track;
+      render();
+      break;
+    case "drill-cat":
+      drillCat = btn.dataset.cat;
+      render();
+      break;
+    case "drill-open":
+      openDrill = openDrill === btn.dataset.id ? null : btn.dataset.id;
+      render();
+      break;
+    case "add-drill":
+      addDrillToSession(btn.dataset.id);
+      break;
+    case "lesson-answer": {
+      const l = LESSONS.find((x) => x.id === btn.dataset.id);
+      const pick = Number(btn.dataset.i);
+      lessonAnswer = { id: l.id, pick };
+      const d = state.lessonsDone[l.id] || null;
+      if (pick === l.quiz.answer && !(d && d.quiz)) {
+        state.lessonsDone[l.id] = { ...(d || {}), quiz: true };
+        award(XP.quiz, "Correct");
+        if (!d) award(XP.lesson, "Lesson complete");
+        checkBadges();
+        save();
+      }
+      render();
+      break;
+    }
+    case "lesson-done": {
+      const id = btn.dataset.id;
+      if (!state.lessonsDone[id]) {
+        state.lessonsDone[id] = { quiz: false };
+        award(XP.lesson, "Lesson complete");
+        checkBadges();
+        save();
+      }
+      render();
+      break;
+    }
     case "open-story":
       openStory(btn.dataset.uid);
       break;
@@ -1968,9 +2281,21 @@ function onClick(e) {
 
 document.addEventListener("submit", onSubmit);
 document.addEventListener("change", onChange);
+document.addEventListener("input", (e) => {
+  if (e.target.id !== "drill-search") return;
+  drillQuery = e.target.value;
+  const wrap = document.createElement("div");
+  wrap.innerHTML = drillLibrary();
+  const fresh = wrap.querySelector("#drill-results");
+  const current = $("#drill-results");
+  current.previousElementSibling.textContent = fresh.previousElementSibling.textContent;
+  current.replaceWith(fresh);
+});
 document.addEventListener("click", onClick);
 window.addEventListener("hashchange", () => {
   closeStory();
+  closeStoryComposer();
+  lessonAnswer = null;
   if (location.hash === "#quiz" && !quiz) quiz = { i: 0, a: {} };
   render();
   window.scrollTo(0, 0);

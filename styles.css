@@ -613,3 +613,84 @@ button.quest-check { cursor: pointer; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .build-steps li { opacity: 1; }
 }
+
+/* Stories bar (Home + Feed) */
+.stories { align-items: flex-start; }
+.story-av.ring.seen .av { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--line); }
+.stories-empty { align-self: center; max-width: 200px; }
+.story-composer { align-items: center; }
+.composer-card { width: min(440px, 100%); }
+.story-preview {
+  position: relative; min-height: 260px; border-radius: 16px; padding: 22px 18px;
+  display: grid; align-content: center; justify-items: center; gap: 12px; text-align: center; color: #fff;
+}
+.story-preview textarea {
+  background: transparent; border: 0; color: #fff; text-align: center;
+  font: 700 1.35rem/1.3 var(--body); resize: none; outline: none;
+}
+.story-preview textarea::placeholder { color: rgba(255, 255, 255, 0.65); }
+.story-preview .story-rank { color: #fff; opacity: 0.85; }
+[data-bg="ember"] { background: linear-gradient(170deg, #ff6a13, #2a1206 60%, #0d0f14); }
+[data-bg="court"] { background: linear-gradient(165deg, #c9874a, #6b3c17 55%, #1a1009); }
+[data-bg="night"] { background: linear-gradient(165deg, #3a4cff, #151a4a 55%, #07081a); }
+[data-bg="gold"] { background: linear-gradient(165deg, #f5b83d, #6a4508 55%, #120c02); }
+.bg-picks { display: flex; gap: 10px; justify-content: center; }
+.bg-pick { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
+.bg-pick[data-bg="ember"] { background: linear-gradient(135deg, #ff6a13, #2a1206); }
+.bg-pick[data-bg="court"] { background: linear-gradient(135deg, #c9874a, #6b3c17); }
+.bg-pick[data-bg="night"] { background: linear-gradient(135deg, #3a4cff, #151a4a); }
+.bg-pick[data-bg="gold"] { background: linear-gradient(135deg, #f5b83d, #6a4508); }
+.bg-pick.active { border-color: var(--ink); box-shadow: 0 0 0 3px var(--panel); }
+
+/* Home: next lesson */
+.lesson-tile {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 16px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--c) 50%, var(--line));
+  background: linear-gradient(120deg, color-mix(in srgb, var(--c) 20%, transparent), transparent 65%), var(--panel);
+}
+.lesson-tile > div { display: grid; gap: 2px; min-width: 0; }
+.lesson-tile strong { font: 800 1.25rem var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
+.lesson-go { font: 900 1.6rem var(--display); color: var(--c); }
+
+/* Learn */
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); }
+.seg button { border: 0; background: none; color: var(--muted); padding: 10px; border-radius: 10px; font: 800 0.9rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }
+.seg button.active { background: var(--accent); color: var(--accent-ink); }
+.track { display: grid; gap: 10px; }
+.track-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.track-head h2.display { font-size: 1.6rem; }
+.track-count { font: 900 1.4rem var(--display); color: var(--muted); }
+.track-skill { --t: var(--accent); }
+.track-physical { --t: var(--carbs); }
+.track-mental { --t: #b062ff; }
+.track .bar > div { background: var(--t); }
+.lesson-hero .eyebrow { color: var(--t); }
+.track-head h2 { color: var(--t); }
+.lesson-list { display: grid; gap: 6px; }
+.lesson-row { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.lesson-row:hover { border-color: var(--t); }
+.lesson-row .pos { font: 900 1.2rem var(--display); color: var(--muted); text-align: center; }
+.lesson-row.done .pos { color: var(--good); }
+.lesson-row .who { display: grid; min-width: 0; }
+.lesson-row .who small { color: var(--muted); font-size: 0.78rem; }
+.lesson-row.done .xp-tag { color: var(--good); }
+.lib-tools { display: flex; gap: 10px; align-items: center; }
+.lib-tools input[type="search"] { flex: 1; }
+.lib-tools .switch { flex: none; }
+.drill-toggle { display: grid; gap: 4px; text-align: left; background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; width: 100%; }
+.lib-drill { padding: 12px 14px; }
+.key-points { display: grid; gap: 10px; }
+.key-points li { position: relative; padding-left: 20px; }
+.key-points li::before { content: ""; position: absolute; left: 0; top: 0.55em; width: 8px; height: 8px; border-radius: 2px; background: var(--accent); transform: rotate(45deg); }
+.lesson-hero h1.display { font-size: 2.2rem; }
+.quiz-card .option { padding: 12px 14px; }
+.option.right { border-color: var(--good); background: color-mix(in srgb, var(--good) 14%, var(--panel)); }
+.option.right .tick { color: var(--good); }
+.option.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 12%, var(--panel)); }
+.option.wrong .tick { color: var(--bad); }
+.option:disabled { cursor: default; }
+.good-text { color: var(--good); font-weight: 700; }
+
+/* Six-tab nav */
+.nav a { padding: 6px 6px; min-width: 0; }
+@media (max-width: 380px) { .nav a span { font-size: 0.62rem; } }

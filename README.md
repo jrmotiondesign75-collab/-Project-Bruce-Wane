@@ -15,6 +15,8 @@ Ranked basketball training. Players take a short quiz, get a personal program bu
 - **Video-game progression**: XP for every task, with early levels coming fast. Rank tiers go from Bronze III to Legend, like ranked game modes. You get level-up and rank-up animations, an OVR player card, badges, daily quests and streaks.
 - **Leaderboards**: weekly XP, shots made, commitments kept, streak and level.
 - **Social feed**: drill, advice and win posts with photos or videos, 🔥 cheers and comments. Coaches get a badge. Stories last 24 hours.
+- **Learn library**: 25 short lessons in three tracks (Skill, Physical, Mental). Each one has key points, linked practice drills and a one-question check for XP. There's also a searchable library of every drill with category and pro/college filters and one-tap "Add to today's session".
+- **Stories on Home**: a stories bar at the top of Home and Feed. Post text, photo, video or your workout on a choice of backgrounds. Stories you've already watched are marked.
 - **Story sharing**: post a workout to your in-app story, or save a 1080×1920 image to share on Instagram or TikTok.
 - **AI Coach** (optional): analyzes a workout or your week and answers training questions, using your own data.
 
@@ -52,6 +54,7 @@ Shared data layout:
 index.html     App shell
 styles.css     Game-style theme, dark and light
 js/drills.js   Drill library with sources
+js/lessons.js  Lesson library (Skill, Physical, Mental)
 js/data.js     Quiz, meals, quotes, badges, rank tiers, XP values
 js/engine.js   Plan building, workouts, nutrition, sleep, XP and ranks
 js/cloud.js    Claude capabilities (db, user, sample, assets, downloads) with fallbacks
