@@ -854,11 +854,22 @@ function onClick(e) {
     save();
     render();
   } else if (a === "reset") {
-    if (confirm("Delete your profile, workouts, and progress? This can't be undone.")) {
+    // Two-tap confirm: native confirm() dialogs are blocked in some embedded views
+    if (btn.dataset.armed) {
       state = defaultState();
       save();
       location.hash = "";
       render();
+    } else {
+      btn.dataset.armed = "1";
+      btn.textContent = "Tap again to delete everything";
+      btn.classList.add("danger");
+      setTimeout(() => {
+        if (!btn.isConnected) return;
+        delete btn.dataset.armed;
+        btn.textContent = "Reset all data";
+        btn.classList.remove("danger");
+      }, 4000);
     }
   }
 }
