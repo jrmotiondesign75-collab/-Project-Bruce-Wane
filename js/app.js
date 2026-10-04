@@ -713,20 +713,65 @@ function viewTrain() {
   </section>`;
 }
 
+function nextWorkout() {
+  const now = new Date();
+  for (let d = 0; d < 8; d++) {
+    const when = new Date(now);
+    when.setDate(now.getDate() + d);
+    const e = state.schedule[when.getDay()];
+    if (e.type === "rest" || !e.time) continue;
+    const [h, m] = e.time.split(":").map(Number);
+    when.setHours(h, m, 0, 0);
+    if (when <= now || (d === 0 && doneToday())) continue;
+    return { e, when };
+  }
+  return null;
+}
+
+function countdown(ms) {
+  const mins = Math.max(0, Math.round(ms / 60000));
+  const h = Math.floor(mins / 60);
+  if (h >= 24) return `${Math.floor(h / 24)}d ${h % 24}h`;
+  return h ? `${h}h ${mins % 60}m` : `${mins}m`;
+}
+
+function splitTime(hhmm) {
+  const [t, ampm] = formatTime(hhmm).split(" ");
+  return `${t}<small>${ampm}</small>`;
+}
+
 function viewSchedule() {
   if (!isPlayer()) return viewCoachHome();
   const types = Object.keys(SESSION_TYPES);
+  const r = rankFor(levelInfo(state.xp).level);
+  const next = nextWorkout();
+  const wk = weekKey();
+  const trainDays = state.schedule.filter((e) => e.type !== "rest").length;
+  const alarms = state.schedule.filter((e) => e.type !== "rest" && e.alarm).length;
   return `
-  <section class="page-head"><p class="eyebrow">Your week</p><h1 class="display">Schedule</h1>
-  <p class="muted">Change any day's session or time. Today's workout updates to match.</p></section>
+  <section class="page-head"><p class="eyebrow">Your week</p><h1 class="display">Schedule</h1></section>
+
+  <section class="game-card next-card" style="--c:${r.color}">
+    <div class="pc-top">
+      <div class="pc-ovr next-time"><span class="num">${next ? splitTime(next.e.time) : "—"}</span><small>${next ? DAY_NAMES[next.when.getDay()] : "No workouts"}</small></div>
+      <div class="pc-id"><strong class="display">${next ? esc(SESSION_TYPES[next.e.type].label) : "Rest week"}</strong><span>${next ? `Next ${next.e.alarm ? "alarm" : "reminder"} in <b class="num" id="next-countdown">${countdown(next.when - Date.now())}</b>` : "Add a session below"}</span></div>
+      <div class="pc-tier">${next && next.e.alarm ? "Alarm on" : "Reminder"}</div>
+    </div>
+    <div class="pc-parts" style="grid-template-columns:repeat(4,1fr)">
+      <div><span class="num">${trainDays}</span><small>Days</small></div>
+      <div><span class="num">${alarms}</span><small>Alarms</small></div>
+      <div><span class="num">${state.keptDates.filter((k) => weekKey(parseKey(k)) === wk).length}</span><small>Kept</small></div>
+      <div><span class="num">${derived().streak}</span><small>Streak</small></div>
+    </div>
+  </section>
 
   <ul class="sched">
     ${state.schedule.map((e, i) => `
-    <li class="${i === new Date().getDay() ? "is-today" : ""}">
+    <li class="${i === new Date().getDay() ? "is-today" : ""} kind-${SESSION_TYPES[e.type].kind}">
       <span class="day">${DAY_NAMES[i]}</span>
       <select id="sched-type-${i}" data-sched="type" data-day="${i}" aria-label="${DAY_NAMES[i]} session">${types.map((k) => `<option value="${k}" ${k === e.type ? "selected" : ""}>${SESSION_TYPES[k].label}</option>`).join("")}</select>
       ${e.type === "rest" ? `<span class="muted small">No workout</span>` : `<input id="sched-time-${i}" type="time" data-sched="time" data-day="${i}" value="${e.time || ""}" aria-label="${DAY_NAMES[i]} time">`}
-      ${e.type === "rest" ? "" : `<label class="toggle" for="sched-alarm-${i}"><input id="sched-alarm-${i}" type="checkbox" data-sched="alarm" data-day="${i}" ${e.alarm ? "checked" : ""}><span>Alarm</span></label>`}
+      ${e.type === "rest" ? "" : `<label class="switch" for="sched-alarm-${i}"><input id="sched-alarm-${i}" type="checkbox" data-sched="alarm" data-day="${i}" ${e.alarm ? "checked" : ""}><span>Alarm</span></label>`}
     </li>`).join("")}
   </ul>
 
@@ -1253,24 +1298,51 @@ Recent workouts:\n${recent || "none yet"}`;
 
 const COACH_RULES = `You are Courtside Coach, a knowledgeable, encouraging basketball coach inside a training app. Use the player's data below. Be specific and concise (under 170 words). Use short paragraphs or "- " bullets, plain text, no headings. Never diagnose injuries; for pain, tell them to see an athletic trainer or doctor. For a young athlete, keep nutrition advice general and safe.`;
 
+function coachCard(locked) {
+  const r = rankFor(levelInfo(state.xp).level);
+  let parts;
+  if (isPlayer()) {
+    const x = derived();
+    const nights = state.sleep.slice(-7);
+    const avg = nights.length ? Math.round((nights.reduce((n, s) => n + s.hours, 0) / nights.length) * 10) / 10 : "—";
+    parts = [[ratings(state).ovr, "OVR"], [x.streak, "Streak"], [avg, "Sleep"], [x.kept, "Kept"], [x.shots ? `${Math.round((x.makes / x.shots) * 100)}%` : "—", "Shot %"]];
+  } else {
+    parts = [[state.myPosts.length, "Posts"], [live.players.filter((p) => p.role === "player").length, "Players"], [levelInfo(state.xp).level, "Level"]];
+  }
+  return `
+  <section class="game-card coach-card" style="--c:${r.color}">
+    <div class="pc-top">
+      <div class="coach-mark">${icon("coach")}</div>
+      <div class="pc-id"><strong class="display">AI Coach</strong><span>${locked ? esc(locked) : "Reads your workouts, sleep and schedule"}</span></div>
+      <div class="pc-tier">${locked ? "Locked" : coachBusy ? "Thinking" : "Online"}</div>
+    </div>
+    <div class="pc-parts" style="grid-template-columns:repeat(${parts.length},1fr)">${parts.map(([v, k]) => `<div><span class="num">${v}</span><small>${k}</small></div>`).join("")}</div>
+  </section>`;
+}
+
 function viewCoach() {
   if (!hasAI() || !state.settings.aiCoach) {
-    return `<section class="page-head"><h1 class="display">AI Coach</h1><p class="muted">${hasAI() ? "Turn on AI Coach in Settings to use it." : "AI Coach works when Courtside is opened from its Claude link."}</p></section>`;
+    return `<section class="page-head"><p class="eyebrow">Personal</p><h1 class="display">AI Coach</h1></section>
+    ${coachCard(hasAI() ? "Turn on AI Coach in Settings to use it." : "Works when Courtside is opened from its Claude link.")}
+    ${hasAI() ? `<a class="btn primary big" href="#me">Open settings</a>` : ""}`;
   }
-  const quick = isPlayer() ? ["Analyze my last workout", "Review my week and tell me what to fix", "How can I shoot better free throws?", "What should I eat before a game?"] : ["Give me a 15-minute shooting drill for my team", "How do I teach closeouts?", "Ideas to keep players motivated"];
+  const quick = isPlayer()
+    ? [["Analyze", "Analyze my last workout"], ["Review", "Review my week and tell me what to fix"], ["Shooting", "How can I shoot better free throws?"], ["Fuel", "What should I eat before a game?"]]
+    : [["Drill", "Give me a 15-minute shooting drill for my team"], ["Defense", "How do I teach closeouts?"], ["Culture", "Ideas to keep players motivated"]];
   return `
-  <section class="page-head"><p class="eyebrow">Personal</p><h1 class="display">AI Coach</h1><p class="muted small">Answers use your profile, workouts and sleep. Each question uses your Claude usage.</p></section>
-  <div class="chat" id="chat">
-    ${state.coachChat.length ? state.coachChat.map((m) => `<div class="msg ${m.role}">${esc(m.content)}</div>`).join("") : `<p class="muted small">Ask anything about your training, or tap a suggestion.</p>`}
-    ${coachBusy ? `<div class="msg assistant" id="coach-live">${esc(coachBusy.text || "Thinking…")}</div>` : ""}
-  </div>
-  <div class="chips wrap">${quick.map((q) => `<button class="chip" data-action="coach-quick" data-q="${esc(q)}">${esc(q)}</button>`).join("")}</div>
+  <section class="page-head"><p class="eyebrow">Personal</p><h1 class="display">AI Coach</h1></section>
+  ${coachCard()}
+  ${state.coachChat.length || coachBusy ? `<div class="chat" id="chat">
+    ${state.coachChat.map((m) => `<div class="msg ${m.role}">${m.role === "assistant" ? `<span class="msg-tag">Coach</span>` : ""}${esc(m.content)}</div>`).join("")}
+    ${coachBusy ? `<div class="msg assistant"><span class="msg-tag">Coach</span><span id="coach-live">${esc(coachBusy.text || "Thinking…")}</span></div>` : ""}
+  </div>` : ""}
+  <div class="ability-grid">${quick.map(([tag, q]) => `<button class="ability" data-action="coach-quick" data-q="${esc(q)}" ${coachBusy ? "disabled" : ""}><small>${tag}</small><span>${esc(q)}</span></button>`).join("")}</div>
   <form id="coach-form" class="coach-form">
     <label class="sr" for="coach-input">Message</label>
     <textarea id="coach-input" rows="2" maxlength="800" placeholder="Ask your coach"></textarea>
     ${coachBusy ? `<button class="btn ghost" type="button" data-action="coach-stop">Stop</button>` : `<button class="btn primary" type="submit">Send</button>`}
   </form>
-  ${state.coachChat.length ? `<button class="link small" data-action="coach-clear">Clear conversation</button>` : ""}`;
+  <div class="row-between"><p class="muted small">Each question uses your Claude usage.</p>${state.coachChat.length ? `<button class="link small" data-action="coach-clear">Clear conversation</button>` : ""}</div>`;
 }
 
 async function sendCoach(text) {
@@ -1409,15 +1481,33 @@ function beep(times = 1, freq = 880) {
 
 let alarmLoop = null;
 
-function ringAlarm(label, test = false) {
+function ringAlarm(type, test = false) {
   if ($(".alarm")) return;
+  const t = SESSION_TYPES[type] || SESSION_TYPES.shooting;
+  const r = rankFor(levelInfo(state.xp).level);
+  const sess = state.session && state.session.date === today() && state.session.type === type ? state.session : null;
+  const drills = sess ? sess.drills : buildWorkout(state.profile, type, hashString(today() + type));
+  const mins = drills.reduce((n, id) => n + drill(id).minutes, 0);
+  const reward = t.kind === "recovery" ? XP.recovery : XP.workout + XP.onTime;
+  const [clock, ampm] = new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).split(" ");
   const el = document.createElement("div");
   el.className = "overlay alarm";
-  el.innerHTML = `<div class="sheet"><p class="eyebrow">${test ? "Alarm test" : "Workout alarm"}</p>
-    <div class="alarm-time num">${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</div>
-    <h2>${esc(label)}</h2>
-    ${audioCtx && audioCtx.state === "running" ? "" : `<p class="muted small">Tap anywhere to turn the sound on.</p>`}
-    <div class="actions"><button class="btn ghost" data-a="snooze">Snooze 9 min</button><button class="btn primary" data-a="go">${test ? "Stop" : "I'm up. Let's go"}</button></div></div>`;
+  el.style.setProperty("--c", r.color);
+  el.innerHTML = `<div class="game-card alarm-card" role="alertdialog" aria-label="Workout alarm">
+    <div class="alarm-rings" aria-hidden="true"><span></span><span></span></div>
+    <p class="eyebrow">${test ? "Alarm test" : "Workout alarm"}</p>
+    <div class="alarm-time num">${clock}<small>${ampm || ""}</small></div>
+    <h2 class="display">${esc(t.label)}</h2>
+    <div class="pc-parts" style="grid-template-columns:repeat(4,1fr)">
+      <div><span class="num">${drills.length}</span><small>Drills</small></div>
+      <div><span class="num">${mins}</span><small>Min</small></div>
+      <div><span class="num">+${reward}</span><small>XP</small></div>
+      <div><span class="num">${derived().streak}</span><small>Streak</small></div>
+    </div>
+    <p class="small muted">Start within 2 hours to earn the on-time bonus and keep your streak alive.</p>
+    ${audioCtx && audioCtx.state === "running" ? "" : `<p class="small alarm-sound">Tap anywhere to turn the sound on.</p>`}
+    <div class="actions"><button class="btn ghost" data-a="snooze">Snooze 9 min</button><button class="btn primary" data-a="go">${test ? "Stop" : "I'm up. Let's go"}</button></div>
+  </div>`;
   document.body.appendChild(el);
   const ring = () => {
     beep(4, 988);
@@ -1427,13 +1517,14 @@ function ringAlarm(label, test = false) {
   alarmLoop = setInterval(ring, 1800);
   el.addEventListener("click", (e) => {
     primeAudio();
+    el.querySelector(".alarm-sound")?.remove();
     const a = e.target.dataset.a;
     if (!a) return;
     clearInterval(alarmLoop);
     el.remove();
     if (a === "snooze") {
       toast("Snoozed for 9 minutes");
-      setTimeout(() => ringAlarm(label, test), 9 * 60 * 1000);
+      setTimeout(() => ringAlarm(type, test), 9 * 60 * 1000);
     } else if (!test) {
       location.hash = "#train";
     }
@@ -1447,6 +1538,11 @@ function notifySystem(title, body) {
 }
 
 function checkReminders() {
+  const cd = $("#next-countdown");
+  if (cd && isPlayer()) {
+    const n = nextWorkout();
+    if (n) cd.textContent = countdown(n.when - Date.now());
+  }
   if (!isPlayer() || doneToday()) return;
   const e = todayEntry();
   if (e.type === "rest" || !e.time) return;
@@ -1461,7 +1557,7 @@ function checkReminders() {
   save();
   const label = SESSION_TYPES[e.type].label;
   notifySystem("Time to train", `Your ${label} starts now.`);
-  if (e.alarm) ringAlarm(label);
+  if (e.alarm) ringAlarm(e.type);
   else toast(`It's ${formatTime(e.time)}. Time for your ${label}.`, "gold");
   if (["home", "train"].includes(route())) softRender();
 }
@@ -1775,7 +1871,7 @@ function onClick(e) {
       break;
     case "test-alarm":
       primeAudio();
-      ringAlarm("This is how your workout alarm sounds", true);
+      ringAlarm((nextWorkout() || { e: { type: todayEntry().type === "rest" ? "recovery" : todayEntry().type } }).e.type, true);
       break;
     case "wake":
       toggleWake();

@@ -132,6 +132,7 @@ h2.display { font-size: 1.8rem; }
 .danger-text { color: var(--bad); }
 .link { background: none; border: 0; color: var(--muted); font: inherit; cursor: pointer; padding: 4px 0; }
 .link:hover { color: var(--ink); }
+.row-between > .link { white-space: nowrap; }
 .actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .actions .btn { flex: 1 1 auto; }
 
@@ -366,10 +367,20 @@ button.quest-check { cursor: pointer; }
   display: grid; grid-template-columns: 44px 1fr 112px auto; gap: 8px; align-items: center;
   background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px;
 }
-.sched li.is-today { border-color: var(--accent); }
+.sched li.is-today { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.sched li.kind-skill .day { color: var(--accent); }
+.sched li.kind-athletic .day { color: var(--carbs); }
+.sched li.kind-recovery .day { color: var(--good); }
+.sched li.kind-rest { opacity: 0.7; }
+.switch { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font: 800 0.72rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.switch input { appearance: none; width: 38px; height: 22px; padding: 0; border-radius: 99px; background: var(--panel-2); border: 1px solid var(--line); position: relative; cursor: pointer; transition: background 0.15s; }
+.switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--muted); transition: transform 0.15s, background 0.15s; }
+.switch input:checked { background: color-mix(in srgb, var(--gold) 30%, var(--panel-2)); border-color: var(--gold); }
+.switch input:checked::after { transform: translateX(16px); background: var(--gold); }
+.switch:has(input:checked) { color: var(--gold); }
 .sched .day { font: 800 1rem var(--display); letter-spacing: 0.05em; }
 .sched select, .sched input[type="time"] { padding: 8px; }
-.sched .toggle { font-size: 0.82rem; }
+
 
 /* Fuel */
 .targets { grid-template-columns: repeat(5, 1fr); text-align: center; gap: 4px; }
@@ -452,7 +463,7 @@ button.quest-check { cursor: pointer; }
 .story-rank { font: 800 1.2rem var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--c); }
 
 /* Ranks */
-.player-card {
+.player-card, .game-card {
   border-radius: 20px; padding: 18px; display: grid; gap: 14px;
   border: 2px solid var(--c);
   background:
@@ -464,6 +475,26 @@ button.quest-check { cursor: pointer; }
 .pc-top { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: center; }
 .pc-ovr { grid-row: span 2; display: grid; justify-items: center; }
 .pc-ovr .num { font: 900 3.4rem/0.9 var(--display); color: var(--c); }
+.pc-ovr .num small, .alarm-time small { font-size: 0.4em; margin-left: 3px; letter-spacing: 0.04em; }
+.next-time .num { font-size: 2.6rem; }
+.next-time > small { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; }
+.next-card .pc-id span b { color: var(--ink); }
+.coach-mark { grid-row: span 2; width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center; color: var(--c); border: 2px solid var(--c); background: color-mix(in srgb, var(--c) 18%, var(--panel-2)); }
+.coach-mark svg { width: 34px; height: 34px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.coach-card .pc-tier, .next-card .pc-tier { white-space: nowrap; }
+.ability-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.ability {
+  display: grid; gap: 4px; align-content: start; text-align: left;
+  padding: 12px; border-radius: 14px; cursor: pointer;
+  background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+  font: 600 0.9rem/1.3 var(--body);
+  transition: border-color 0.15s, transform 0.08s;
+}
+.ability small { font: 800 0.72rem var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
+.ability:hover { border-color: var(--accent); }
+.ability:active { transform: scale(0.98); }
+.ability:disabled { opacity: 0.5; cursor: default; }
+.msg-tag { display: block; font: 800 0.7rem var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
 .pc-id { display: grid; min-width: 0; }
 .pc-id strong { font-size: 1.7rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pc-id span { color: var(--muted); font-size: 0.86rem; }
@@ -513,7 +544,7 @@ button.quest-check { cursor: pointer; }
 .chat { display: grid; gap: 10px; }
 .msg { padding: 12px 14px; border-radius: 14px; white-space: pre-wrap; overflow-wrap: anywhere; max-width: 92%; }
 .msg.user { justify-self: end; background: var(--accent); color: var(--accent-ink); border-bottom-right-radius: 4px; }
-.msg.assistant { justify-self: start; background: var(--panel); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+.msg.assistant { justify-self: start; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-bottom-left-radius: 4px; }
 .coach-form { display: flex; gap: 8px; align-items: flex-end; }
 
 /* Overlays */
@@ -521,8 +552,17 @@ button.quest-check { cursor: pointer; }
 .sheet { width: min(420px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: grid; gap: 10px; text-align: center; }
 .timer-face { font: 900 4.6rem/1 var(--display); margin: 8px 0; }
 .timer-face.finished { color: var(--good); animation: pulse 0.6s ease infinite alternate; }
-.alarm .sheet { border-color: var(--gold); }
-.alarm-time { font: 900 4rem/1 var(--display); color: var(--gold); }
+.alarm { background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--c) 35%, rgba(0,0,0,0.75)), rgba(0, 0, 0, 0.92) 70%); }
+.alarm-card { position: relative; width: min(420px, 100%); text-align: center; justify-items: center; overflow: hidden; }
+.alarm-card .pc-parts { width: 100%; }
+.alarm-card .actions { width: 100%; }
+.alarm-card h2.display { font-size: 2.2rem; }
+.alarm-time { font: 900 5rem/0.95 var(--display); color: var(--c); text-shadow: 0 0 30px color-mix(in srgb, var(--c) 60%, transparent); animation: pulse 0.9s ease-in-out infinite alternate; }
+.alarm-sound { color: var(--gold); font-weight: 700; }
+.alarm-rings { position: absolute; top: 70px; left: 50%; width: 0; height: 0; pointer-events: none; }
+.alarm-rings span { position: absolute; left: -110px; top: -110px; width: 220px; height: 220px; border-radius: 50%; border: 2px solid var(--c); opacity: 0; animation: ring 1.8s ease-out infinite; }
+.alarm-rings span:nth-child(2) { animation-delay: 0.9s; }
+@keyframes ring { from { transform: scale(0.4); opacity: 0.7; } to { transform: scale(1.5); opacity: 0; } }
 
 .celebrate {
   position: fixed; inset: 0; z-index: 50; display: grid; place-content: center; justify-items: center; gap: 6px; text-align: center;
@@ -562,7 +602,7 @@ button.quest-check { cursor: pointer; }
   .sched li { grid-template-columns: 40px 1fr auto; }
   .sched li > select, .sched li > .muted { grid-column: 2 / -1; }
   .sched li > input { grid-column: 2; }
-  .sched li > .toggle { grid-column: 3; }
+  .sched li > .switch { grid-column: 3; }
   .tier small { font-size: 0.55rem; letter-spacing: 0; }
   .focus-row { grid-template-columns: 96px 1fr 36px; }
   .mission { flex-direction: column; align-items: stretch; }
