@@ -9,6 +9,7 @@ Ranked basketball training. Players take a short quiz, get a personal program bu
 - **Workouts**: sessions fit the player's level, position, equipment and session length. Each drill has a timer, and shooting drills have a make/miss tracker.
 - **Active recovery**: recovery days with mobility, foam rolling, yoga, easy cardio and breathing work.
 - **Editable schedule**: change any day's session and time. Each day can have an alarm.
+- **Alarm clock**: unlimited wake-up, bedtime, game-day and custom alarms with repeat days, four sounds (buzzer, ref whistle, arena horn, chime), snooze, and an optional wake-up challenge (answer a hoops question to stop it). Getting up within 10 minutes earns XP, and wake and bed times carry into the sleep log. Bedtime is suggested from your sleep goal and earliest wake-up.
 - **Reminders and alarms**: an in-app reminder at workout time, plus an optional alarm sound with snooze. You can also export the schedule as a calendar file with alerts, which work even when the app is closed.
 - **Nutrition**: calorie and macro targets, plus a daily meal plan that respects your diet.
 - **Sleep tracking**: log bed and wake times. The target depends on age, and a 14-night chart shows how often you hit it.

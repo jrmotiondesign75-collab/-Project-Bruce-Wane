@@ -160,6 +160,8 @@ export const XP = {
   stat: 10,
   lesson: 20,
   quiz: 10,
+  upOnTime: 10,
+  alarmChallenge: 5,
 };
 
 export const BADGES = [
@@ -174,6 +176,7 @@ export const BADGES = [
   { id: "recover", name: "Recovery Pro", desc: "Complete 3 active recovery days", test: (s) => s.workouts.filter((w) => w.type === "recovery").length >= 3 },
   { id: "fuel", name: "Fuel Up", desc: "Eat every meal on your plan in a day", test: (s) => Object.values(s.mealsEaten || {}).some((d) => d.length >= 4) },
   { id: "creator", name: "Content Creator", desc: "Share 3 posts or stories", test: (s) => (s.postsMade || 0) >= 3 },
+  { id: "early-bird", name: "Early Bird", desc: "Get up on time with 5 wake-up alarms", test: (s) => (s.upOnTime || 0) >= 5 },
   { id: "student", name: "Student of the Game", desc: "Complete 10 lessons", test: (s) => Object.keys(s.lessonsDone || {}).length >= 10 },
   { id: "mind", name: "Mind Right", desc: "Complete every Mental lesson", test: (s) => ["ft-routine", "next-play", "self-talk", "visualization", "pressure", "goals", "slump", "teammate"].every((id) => (s.lessonsDone || {})[id]) },
   { id: "pro-drills", name: "Pro Routine", desc: "Finish 10 drills from pro or college programs", test: (s, x) => x.proDrills >= 10 },

@@ -694,3 +694,34 @@ button.quest-check { cursor: pointer; }
 /* Six-tab nav */
 .nav a { padding: 6px 6px; min-width: 0; }
 @media (max-width: 380px) { .nav a span { font-size: 0.62rem; } }
+
+/* Alarms */
+.ability em { font-style: normal; }
+.ability span { font: 900 1.35rem var(--display); letter-spacing: 0.02em; }
+.alarm-list { display: grid; gap: 8px; }
+.alarm-row {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px;
+  border-left: 3px solid var(--k, var(--accent));
+}
+.alarm-row.kind-wake { --k: var(--gold); }
+.alarm-row.kind-bedtime { --k: #6d7bff; }
+.alarm-row.kind-workout { --k: var(--accent); }
+.alarm-row.kind-custom { --k: var(--good); }
+.alarm-row.off { opacity: 0.55; }
+.alarm-main { flex: 1; display: flex; align-items: center; gap: 14px; min-width: 0; background: none; border: 0; padding: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+span.alarm-main { cursor: default; }
+.alarm-clock { font: 900 2.1rem/1 var(--display); color: var(--k); white-space: nowrap; }
+.alarm-clock small { font-size: 0.45em; margin-left: 2px; }
+.alarm-main .who { display: grid; min-width: 0; }
+.alarm-main .who strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.alarm-main .who small { color: var(--muted); font-size: 0.78rem; }
+.alarm-editor { align-items: center; overflow-y: auto; }
+.alarm-time-input { font: 900 3.2rem/1 var(--display); text-align: center; color: var(--c); background: var(--panel-2); padding: 10px; }
+.day-picks { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.day-pick { aspect-ratio: 1; max-width: 100%; border-radius: 50%; border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); font: 800 0.95rem var(--display); cursor: pointer; padding: 0; }
+.day-pick.active { background: var(--c); border-color: var(--c); color: #111; }
+.alarm-challenge { width: 100%; display: grid; gap: 8px; text-align: left; padding: 12px; border-radius: 14px; background: var(--panel-2); border: 1px solid var(--line); }
+.alarm-challenge .option { padding: 12px 14px; }
+.alarm-card.shake { animation: shake 0.35s; }
+@keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }

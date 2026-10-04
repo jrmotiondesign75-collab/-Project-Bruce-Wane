@@ -36,6 +36,10 @@ const fresh = () => ({
   notified: {},
   coachChat: [],
   lessonsDone: {}, // id -> { quiz: true|false }
+  alarms: [], // { id, time, label, kind, days: [0-6], sound, snooze, challenge, on }
+  alarmFired: {}, // alarm id -> date it last rang
+  upOnTime: 0,
+  sleepHint: {}, // { bed, bedTs, wake, wakeTs } captured from alarms
   seenStories: [],
   updatedAt: 0,
 });
@@ -121,6 +125,7 @@ const ICONS = {
   ranks: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/>',
   me: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
   coach: '<path d="M4 5h16v10H9l-5 4z"/><path d="M9 9h6M9 12h4"/>',
+  alarm: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M5 3L2 6M19 3l3 3"/>',
   learn: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M9 7h6M9 11h6"/>',
 };
 const icon = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
@@ -795,7 +800,7 @@ function viewSchedule() {
     <div class="actions">
       <button class="btn primary" data-action="ics">Add schedule to my phone calendar</button>
       <button class="btn ghost" data-action="test-alarm">Test alarm</button>
-      <button class="btn ghost" data-action="wake">${wakeLock ? "Screen stays awake ✓" : "Keep screen awake"}</button>
+      <a class="btn ghost" href="#alarms">Wake-up & bedtime alarms</a>
     </div>
   </section>
 
@@ -855,15 +860,19 @@ function viewSleep() {
   const hits = nights.filter((n) => n.hours >= target - 0.25).length;
   const max = Math.max(target + 2, ...nights.map((n) => n.hours));
   const last = state.sleep[state.sleep.length - 1];
+  const hint = state.sleepHint || {};
+  const fresh = (ts) => ts && Date.now() - ts < 20 * 3600 * 1000;
+  const bedVal = fresh(hint.bedTs) ? hint.bed : last ? last.bed : "22:30";
+  const wakeVal = fresh(hint.wakeTs) ? hint.wake : last ? last.wake : "07:00";
   return `
   <section class="page-head"><p class="eyebrow">Recovery</p><h1 class="display">Sleep</h1>
-  <p class="muted">Your target: <b>${target} hours</b> a night.</p></section>
+  <p class="muted">Your target: <b>${target} hours</b> a night. <a class="link" href="#alarms">Set a bedtime alarm →</a></p></section>
 
   <form id="sleep-form" class="panel sleep-form">
     <p class="eyebrow">Log last night</p>
     <div class="field-grid">
-      <label for="sleep-bed">Went to bed<input id="sleep-bed" name="bed" type="time" value="${last ? last.bed : "22:30"}" required></label>
-      <label for="sleep-wake">Woke up<input id="sleep-wake" name="wake" type="time" value="${last ? last.wake : "07:00"}" required></label>
+      <label for="sleep-bed">Went to bed<input id="sleep-bed" name="bed" type="time" value="${bedVal}" required></label>
+      <label for="sleep-wake">Woke up<input id="sleep-wake" name="wake" type="time" value="${wakeVal}" required></label>
       <label for="sleep-quality">How did you feel?<select id="sleep-quality" name="quality">
         <option value="5">Great</option><option value="4" selected>Good</option><option value="3">OK</option><option value="2">Tired</option><option value="1">Exhausted</option>
       </select></label>
@@ -1734,54 +1743,368 @@ function beep(times = 1, freq = 880) {
 
 let alarmLoop = null;
 
-function ringAlarm(type, test = false) {
+const SOUNDS = { buzzer: "Buzzer", whistle: "Ref whistle", horn: "Arena horn", chime: "Chime" };
+
+function tone(freq, at, dur, type = "square", vol = 0.22, toFreq) {
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, at);
+  if (toFreq) o.frequency.linearRampToValueAtTime(toFreq, at + dur);
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.exponentialRampToValueAtTime(vol, at + 0.02);
+  g.gain.setValueAtTime(vol, at + Math.max(0.03, dur - 0.06));
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+  o.connect(g).connect(audioCtx.destination);
+  o.start(at);
+  o.stop(at + dur + 0.02);
+}
+
+function playSound(name) {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime + 0.02;
+  if (name === "whistle") {
+    for (let b = 0; b < 2; b++) for (let i = 0; i < 10; i++) tone(i % 2 ? 2950 : 3250, t + b * 0.75 + i * 0.05, 0.05, "sine", 0.18);
+  } else if (name === "horn") {
+    tone(233, t, 1.1, "sawtooth", 0.16);
+    tone(311, t, 1.1, "sawtooth", 0.12);
+  } else if (name === "chime") {
+    [523, 659, 784, 1047].forEach((f, i) => tone(f, t + i * 0.18, 0.55, "sine", 0.2));
+  } else {
+    for (let i = 0; i < 4; i++) tone(988, t + i * 0.32, 0.22, "square", 0.22);
+  }
+}
+
+function nowHHMM() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+// One full-screen ringing card used by every alarm.
+// opts: { eyebrow, title, sub, stats: [[value, label]], sound, snooze, challenge, primary, onDismiss, onSnooze }
+function ringOverlay(opts) {
   if ($(".alarm")) return;
-  const t = SESSION_TYPES[type] || SESSION_TYPES.shooting;
   const r = rankFor(levelInfo(state.xp).level);
+  const [clock, ampm] = new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).split(" ");
+  const quizPool = LESSONS.map((l) => l.quiz);
+  let q = null;
+  const el = document.createElement("div");
+  el.className = "overlay alarm";
+  el.style.setProperty("--c", r.color);
+  const draw = () => {
+    el.innerHTML = `<div class="game-card alarm-card" role="alertdialog" aria-label="${esc(opts.eyebrow)}">
+      <div class="alarm-rings" aria-hidden="true"><span></span><span></span></div>
+      <p class="eyebrow">${esc(opts.eyebrow)}</p>
+      <div class="alarm-time num">${clock}<small>${ampm || ""}</small></div>
+      <h2 class="display">${esc(opts.title)}</h2>
+      ${opts.stats && opts.stats.length ? `<div class="pc-parts" style="grid-template-columns:repeat(${opts.stats.length},1fr)">${opts.stats.map(([v, k]) => `<div><span class="num">${esc(v)}</span><small>${esc(k)}</small></div>`).join("")}</div>` : ""}
+      ${opts.sub ? `<p class="small muted">${esc(opts.sub)}</p>` : ""}
+      ${audioCtx && audioCtx.state === "running" ? "" : `<p class="small alarm-sound">Tap anywhere to turn the sound on.</p>`}
+      ${q ? `<div class="alarm-challenge"><p class="eyebrow">Wake-up challenge · answer to stop the alarm</p><strong>${esc(q.q)}</strong>
+        <div class="options">${q.options.map((o, i) => `<button class="option" data-q="${i}">${esc(o)}</button>`).join("")}</div></div>` : ""}
+      <div class="actions">
+        ${opts.snooze ? `<button class="btn ghost" data-a="snooze">Snooze ${opts.snooze} min</button>` : ""}
+        ${q ? "" : `<button class="btn primary" data-a="go">${esc(opts.primary || "Stop")}</button>`}
+      </div>
+    </div>`;
+  };
+  draw();
+  document.body.appendChild(el);
+  const ring = () => {
+    playSound(opts.sound || "buzzer");
+    if (navigator.vibrate) navigator.vibrate([400, 200, 400]);
+  };
+  ring();
+  alarmLoop = setInterval(ring, 2000);
+  const stop = () => {
+    clearInterval(alarmLoop);
+    el.remove();
+  };
+  el.addEventListener("click", (e) => {
+    primeAudio();
+    el.querySelector(".alarm-sound")?.remove();
+    const qi = e.target.closest("[data-q]");
+    if (qi && q) {
+      if (Number(qi.dataset.q) === q.answer) {
+        stop();
+        award(XP.alarmChallenge, "Challenge beaten");
+        opts.onDismiss && opts.onDismiss();
+      } else {
+        el.querySelector(".alarm-card").classList.add("shake");
+        q = quizPool[Math.floor(Math.random() * quizPool.length)];
+        setTimeout(draw, 350);
+      }
+      return;
+    }
+    const a = e.target.closest("[data-a]")?.dataset.a;
+    if (!a) return;
+    if (a === "go" && opts.challenge && !q) {
+      q = quizPool[Math.floor(Math.random() * quizPool.length)];
+      draw();
+      return;
+    }
+    stop();
+    if (a === "snooze") {
+      toast(`Snoozed for ${opts.snooze} minutes`);
+      setTimeout(() => ringOverlay(opts), opts.snooze * 60 * 1000);
+      opts.onSnooze && opts.onSnooze();
+    } else {
+      opts.onDismiss && opts.onDismiss();
+    }
+  });
+}
+
+function ringAlarm(type, test = false) {
+  const t = SESSION_TYPES[type] || SESSION_TYPES.shooting;
   const sess = state.session && state.session.date === today() && state.session.type === type ? state.session : null;
   const drills = sess ? sess.drills : buildWorkout(state.profile, type, hashString(today() + type));
   const mins = drills.reduce((n, id) => n + drill(id).minutes, 0);
   const reward = t.kind === "recovery" ? XP.recovery : XP.workout + XP.onTime;
-  const [clock, ampm] = new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).split(" ");
-  const el = document.createElement("div");
-  el.className = "overlay alarm";
-  el.style.setProperty("--c", r.color);
-  el.innerHTML = `<div class="game-card alarm-card" role="alertdialog" aria-label="Workout alarm">
-    <div class="alarm-rings" aria-hidden="true"><span></span><span></span></div>
-    <p class="eyebrow">${test ? "Alarm test" : "Workout alarm"}</p>
-    <div class="alarm-time num">${clock}<small>${ampm || ""}</small></div>
-    <h2 class="display">${esc(t.label)}</h2>
-    <div class="pc-parts" style="grid-template-columns:repeat(4,1fr)">
-      <div><span class="num">${drills.length}</span><small>Drills</small></div>
-      <div><span class="num">${mins}</span><small>Min</small></div>
-      <div><span class="num">+${reward}</span><small>XP</small></div>
-      <div><span class="num">${derived().streak}</span><small>Streak</small></div>
-    </div>
-    <p class="small muted">Start within 2 hours to earn the on-time bonus and keep your streak alive.</p>
-    ${audioCtx && audioCtx.state === "running" ? "" : `<p class="small alarm-sound">Tap anywhere to turn the sound on.</p>`}
-    <div class="actions"><button class="btn ghost" data-a="snooze">Snooze 9 min</button><button class="btn primary" data-a="go">${test ? "Stop" : "I'm up. Let's go"}</button></div>
-  </div>`;
-  document.body.appendChild(el);
-  const ring = () => {
-    beep(4, 988);
-    if (navigator.vibrate) navigator.vibrate([400, 200, 400]);
-  };
-  ring();
-  alarmLoop = setInterval(ring, 1800);
-  el.addEventListener("click", (e) => {
-    primeAudio();
-    el.querySelector(".alarm-sound")?.remove();
-    const a = e.target.dataset.a;
-    if (!a) return;
-    clearInterval(alarmLoop);
-    el.remove();
-    if (a === "snooze") {
-      toast("Snoozed for 9 minutes");
-      setTimeout(() => ringAlarm(type, test), 9 * 60 * 1000);
-    } else if (!test) {
-      location.hash = "#train";
-    }
+  ringOverlay({
+    eyebrow: test ? "Alarm test" : "Workout alarm",
+    title: t.label,
+    stats: [[drills.length, "Drills"], [mins, "Min"], [`+${reward}`, "XP"], [derived().streak, "Streak"]],
+    sub: "Start within 2 hours to earn the on-time bonus and keep your streak alive.",
+    sound: "buzzer",
+    snooze: 9,
+    primary: test ? "Stop" : "I'm up. Let's go",
+    onDismiss: () => {
+      if (!test) location.hash = "#train";
+    },
   });
+}
+
+// ---------- Custom alarms ----------
+
+const ALARM_KINDS = { wake: "Wake up", bedtime: "Bedtime", workout: "Workout", custom: "Custom" };
+
+function minutesOf(hhmm) {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function fromMinutes(mins) {
+  const m = ((mins % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
+
+function daysText(days) {
+  const set = [...days].sort();
+  if (!set.length) return "Once";
+  if (set.length === 7) return "Every day";
+  if (set.join() === "1,2,3,4,5") return "Weekdays";
+  if (set.join() === "0,6") return "Weekends";
+  return set.map((d) => DAY_NAMES[d]).join(" ");
+}
+
+function nextOccurrence(time, days, from = new Date()) {
+  for (let d = 0; d < 8; d++) {
+    const when = new Date(from);
+    when.setDate(from.getDate() + d);
+    const [h, m] = time.split(":").map(Number);
+    when.setHours(h, m, 0, 0);
+    if (when <= from) continue;
+    if (days.length && !days.includes(when.getDay())) continue;
+    return when;
+  }
+  return null;
+}
+
+function nextAlarm() {
+  const cands = [];
+  for (const a of state.alarms) {
+    if (!a.on) continue;
+    const when = nextOccurrence(a.time, a.days);
+    if (when) cands.push({ when, label: a.label || ALARM_KINDS[a.kind], kind: a.kind, sound: a.sound });
+  }
+  if (isPlayer()) {
+    state.schedule.forEach((e, i) => {
+      if (e.type === "rest" || !e.time || !e.alarm) return;
+      const when = nextOccurrence(e.time, [i]);
+      if (when && !(when.toDateString() === new Date().toDateString() && doneToday())) cands.push({ when, label: SESSION_TYPES[e.type].label, kind: "workout" });
+    });
+  }
+  return cands.sort((a, b) => a.when - b.when)[0] || null;
+}
+
+function suggestedBedtime() {
+  const target = isPlayer() ? sleepTarget(state.profile.age) : 8;
+  const wakes = state.alarms.filter((a) => a.on && a.kind === "wake").map((a) => minutesOf(a.time));
+  const workouts = isPlayer() ? state.schedule.filter((e) => e.type !== "rest" && e.time && minutesOf(e.time) < 12 * 60).map((e) => minutesOf(e.time) - 45) : [];
+  const wake = Math.min(...wakes, ...workouts, 7 * 60);
+  return fromMinutes(wake - target * 60 - 30);
+}
+
+function fireAlarm(a, test = false) {
+  const target = isPlayer() ? sleepTarget(state.profile.age) : 8;
+  const x = isPlayer() ? derived() : { streak: 0 };
+  const base = { sound: a.sound, snooze: a.kind === "bedtime" ? 0 : a.snooze || 9, challenge: a.challenge };
+  if (a.kind === "wake") {
+    const e = isPlayer() ? todayEntry() : null;
+    ringOverlay({
+      ...base,
+      eyebrow: test ? "Alarm test" : "Wake up",
+      title: a.label || "Rise & grind",
+      stats: [[e ? SESSION_TYPES[e.type].short : "—", "Today"], [x.streak, "Streak"], [`+${XP.upOnTime}`, "XP"]],
+      sub: `Get up within 10 minutes for +${XP.upOnTime} XP. Then log your sleep.`,
+      primary: "I'm up",
+      onDismiss: () => {
+        if (test) return;
+        const late = Date.now() - nextOccurrence(a.time, [], new Date(Date.now() - 86400000)).getTime();
+        if (late >= 0 && late <= 10 * 60 * 1000) {
+          state.upOnTime = (state.upOnTime || 0) + 1;
+          award(XP.upOnTime, "Up on time");
+        }
+        state.sleepHint = { ...state.sleepHint, wake: nowHHMM(), wakeTs: Date.now() };
+        checkBadges();
+        save();
+        if (isPlayer()) location.hash = "#sleep";
+      },
+    });
+  } else if (a.kind === "bedtime") {
+    ringOverlay({
+      ...base,
+      challenge: false,
+      eyebrow: test ? "Alarm test" : "Bedtime",
+      title: a.label || "Lights out",
+      stats: [[`${target}h`, "Sleep goal"], [x.streak, "Streak"]],
+      sub: "Phone down, lights off. Sleep is where today's work turns into progress.",
+      primary: "Going to bed",
+      onDismiss: () => {
+        if (test) return;
+        state.sleepHint = { ...state.sleepHint, bed: nowHHMM(), bedTs: Date.now() };
+        save();
+        toast("Good night. Your bedtime is saved for tomorrow's sleep log.");
+      },
+    });
+  } else if (a.kind === "workout" && isPlayer()) {
+    const e = todayEntry();
+    ringAlarm(e.type === "rest" ? "recovery" : e.type, test);
+  } else {
+    ringOverlay({ ...base, eyebrow: test ? "Alarm test" : "Alarm", title: a.label || "Courtside alarm", primary: "Stop" });
+  }
+}
+
+function checkAlarms() {
+  const now = new Date();
+  const k = today();
+  for (const a of state.alarms) {
+    if (!a.on || state.alarmFired[a.id] === k) continue;
+    if (a.days.length && !a.days.includes(now.getDay())) continue;
+    const late = now.getHours() * 60 + now.getMinutes() - minutesOf(a.time);
+    if (late < 0 || late > 30) continue;
+    state.alarmFired[a.id] = k;
+    if (!a.days.length) a.on = false; // one-time alarm
+    save();
+    notifySystem(ALARM_KINDS[a.kind], a.label || "Courtside alarm");
+    fireAlarm(a);
+    if (route() === "alarms") render();
+    break;
+  }
+}
+
+function viewAlarms() {
+  const r = rankFor(levelInfo(state.xp).level);
+  const next = nextAlarm();
+  const onCount = state.alarms.filter((a) => a.on).length + (isPlayer() ? state.schedule.filter((e) => e.type !== "rest" && e.alarm).length : 0);
+  const presets = [
+    ["wake", "Wake up", "06:00", "Every school day"],
+    ["bedtime", "Bedtime", suggestedBedtime(), "Based on your sleep goal"],
+    ["workout", "Game day", "07:00", "One time"],
+    ["custom", "Custom", "12:00", "Any time, any label"],
+  ];
+  return `
+  <section class="page-head"><p class="eyebrow">Wake up. Show up.</p><h1 class="display">Alarms</h1></section>
+
+  <section class="game-card next-card" style="--c:${r.color}">
+    <div class="pc-top">
+      <div class="pc-ovr next-time"><span class="num">${next ? splitTime(`${String(next.when.getHours()).padStart(2, "0")}:${String(next.when.getMinutes()).padStart(2, "0")}`) : "—"}</span><small>${next ? DAY_NAMES[next.when.getDay()] : "None set"}</small></div>
+      <div class="pc-id"><strong class="display">${next ? esc(next.label) : "No alarms on"}</strong><span>${next ? `Rings in <b class="num" id="alarm-countdown">${countdown(next.when - Date.now())}</b>` : "Add one below"}</span></div>
+      <div class="pc-tier">${next ? ALARM_KINDS[next.kind] : "Off"}</div>
+    </div>
+    <div class="pc-parts" style="grid-template-columns:repeat(4,1fr)">
+      <div><span class="num">${onCount}</span><small>On</small></div>
+      <div><span class="num">${state.upOnTime || 0}</span><small>Up on time</small></div>
+      <div><span class="num">${isPlayer() ? sleepTarget(state.profile.age) : 8}h</span><small>Sleep</small></div>
+      <div><span class="num">${isPlayer() ? derived().streak : 0}</span><small>Streak</small></div>
+    </div>
+  </section>
+
+  <div class="ability-grid">${presets.map(([kind, name, time, sub]) => `<button class="ability" data-action="alarm-new" data-kind="${kind}" data-time="${time}"><small>${name}</small><span>+ ${formatTime(time)}</span><em class="muted small">${sub}</em></button>`).join("")}</div>
+
+  ${state.alarms.length ? `<ul class="alarm-list">
+    ${state.alarms.slice().sort((a, b) => minutesOf(a.time) - minutesOf(b.time)).map((a) => `
+    <li class="alarm-row ${a.on ? "" : "off"} kind-${a.kind}">
+      <button class="alarm-main" data-action="alarm-edit" data-id="${a.id}">
+        <span class="alarm-clock num">${splitTime(a.time)}</span>
+        <span class="who"><strong>${esc(a.label || ALARM_KINDS[a.kind])}</strong><small>${daysText(a.days)} · ${SOUNDS[a.sound] || "Buzzer"}${a.challenge ? " · Challenge" : ""}</small></span>
+      </button>
+      <label class="switch" for="alarm-on-${a.id}"><input id="alarm-on-${a.id}" type="checkbox" data-alarm-on="${a.id}" ${a.on ? "checked" : ""}><span class="sr">On</span></label>
+    </li>`).join("")}
+  </ul>` : `<p class="notice small">No alarms yet. Tap a card above to add one.</p>`}
+
+  ${isPlayer() ? `<section>
+    <div class="row-between"><h2 class="section-title">Workout alarms</h2><a class="link small" href="#schedule">Edit schedule</a></div>
+    <ul class="alarm-list">${state.schedule.map((e, i) => e.type === "rest" || !e.time ? "" : `
+      <li class="alarm-row ${e.alarm ? "" : "off"} kind-workout">
+        <span class="alarm-main"><span class="alarm-clock num">${splitTime(e.time)}</span><span class="who"><strong>${esc(SESSION_TYPES[e.type].label)}</strong><small>Every ${DAY_NAMES[i]}</small></span></span>
+        <label class="switch" for="wk-alarm-${i}"><input id="wk-alarm-${i}" type="checkbox" data-sched="alarm" data-day="${i}" ${e.alarm ? "checked" : ""}><span class="sr">On</span></label>
+      </li>`).join("")}</ul>
+  </section>` : ""}
+
+  <section class="panel">
+    <p class="eyebrow">Make sure it rings</p>
+    <p class="small muted">Courtside alarms ring while the app is open. Before bed, leave it open on your charger with “Keep screen awake” on, or add your alarms to your phone's calendar so they alert you even when the app is closed.</p>
+    <div class="actions">
+      <button class="btn primary" data-action="ics">Add alarms to my phone calendar</button>
+      <button class="btn ghost" data-action="wake">${wakeLock ? "Screen stays awake ✓" : "Keep screen awake"}</button>
+    </div>
+  </section>`;
+}
+
+function openAlarmEditor(a) {
+  document.querySelector(".alarm-editor")?.remove();
+  const r = rankFor(levelInfo(state.xp).level);
+  const el = document.createElement("div");
+  el.className = "overlay alarm-editor";
+  el.style.setProperty("--c", r.color);
+  el.innerHTML = `<form class="game-card composer-card" id="alarm-form" data-id="${a.id || ""}">
+    <div class="row-between"><p class="eyebrow">${a.id ? "Edit alarm" : "New alarm"}</p><button type="button" class="link" data-action="alarm-close" aria-label="Close">✕</button></div>
+    <label class="sr" for="alarm-time">Time</label>
+    <input id="alarm-time" class="alarm-time-input num" type="time" value="${a.time}" required>
+    <div class="chips wrap kind-picks">${Object.entries(ALARM_KINDS).filter(([k]) => k !== "workout" || isPlayer()).map(([k, l]) => `<button type="button" class="chip ${a.kind === k ? "active" : ""}" data-action="alarm-kind" data-kind="${k}">${l}</button>`).join("")}</div>
+    <label for="alarm-label">Label<input id="alarm-label" maxlength="30" value="${esc(a.label || "")}" placeholder="${esc(ALARM_KINDS[a.kind])}"></label>
+    <div class="day-picks" role="group" aria-label="Repeat">${DAY_NAMES.map((d, i) => `<button type="button" class="day-pick ${a.days.includes(i) ? "active" : ""}" data-action="alarm-day" data-d="${i}" aria-pressed="${a.days.includes(i)}">${d.charAt(0)}</button>`).join("")}</div>
+    <div class="chips wrap">${[["Every day", [0, 1, 2, 3, 4, 5, 6]], ["Weekdays", [1, 2, 3, 4, 5]], ["Weekends", [0, 6]], ["Once", []]].map(([l, d]) => `<button type="button" class="chip" data-action="alarm-days" data-days="${d.join(",")}">${l}</button>`).join("")}</div>
+    <div class="field-grid">
+      <label for="alarm-sound">Sound<select id="alarm-sound">${Object.entries(SOUNDS).map(([k, l]) => `<option value="${k}" ${a.sound === k ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+      <label for="alarm-snooze">Snooze<select id="alarm-snooze">${[5, 9, 15].map((m) => `<option value="${m}" ${(a.snooze || 9) === m ? "selected" : ""}>${m} min</option>`).join("")}</select></label>
+    </div>
+    <label class="switch" for="alarm-challenge"><input id="alarm-challenge" type="checkbox" ${a.challenge ? "checked" : ""}><span>Wake-up challenge: answer a hoops question to stop it</span></label>
+    <div class="actions">
+      <button type="button" class="btn ghost" data-action="alarm-preview">Preview sound</button>
+      <button type="button" class="btn ghost" data-action="alarm-test">Test alarm</button>
+    </div>
+    <div class="actions">
+      ${a.id ? `<button type="button" class="btn ghost danger-text" data-action="alarm-delete">Delete</button>` : ""}
+      <button class="btn primary" type="submit">Save alarm</button>
+    </div>
+  </form>`;
+  document.body.appendChild(el);
+}
+
+function alarmFromForm(f) {
+  return {
+    id: f.dataset.id || `a${Date.now().toString(36)}`,
+    time: f.querySelector("#alarm-time").value || "06:00",
+    label: f.querySelector("#alarm-label").value.trim().slice(0, 30),
+    kind: f.querySelector(".kind-picks .chip.active")?.dataset.kind || "custom",
+    days: [...f.querySelectorAll(".day-pick.active")].map((b) => Number(b.dataset.d)),
+    sound: f.querySelector("#alarm-sound").value,
+    snooze: Number(f.querySelector("#alarm-snooze").value),
+    challenge: f.querySelector("#alarm-challenge").checked,
+    on: true,
+  };
 }
 
 function notifySystem(title, body) {
@@ -1791,6 +2114,12 @@ function notifySystem(title, body) {
 }
 
 function checkReminders() {
+  checkAlarms();
+  const acd = $("#alarm-countdown");
+  if (acd) {
+    const n = nextAlarm();
+    if (n) acd.textContent = countdown(n.when - Date.now());
+  }
   const cd = $("#next-countdown");
   if (cd && isPlayer()) {
     const n = nextWorkout();
@@ -1837,7 +2166,25 @@ function buildICS() {
   const byday = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
   const stamp = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
   const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Courtside//Training Schedule//EN", "CALSCALE:GREGORIAN", "X-WR-CALNAME:Courtside Training"];
-  state.schedule.forEach((e, i) => {
+  for (const a of state.alarms) {
+    if (!a.on) continue;
+    const when = nextOccurrence(a.time, a.days);
+    if (!when) continue;
+    const [h, m] = a.time.split(":");
+    lines.push(
+      "BEGIN:VEVENT",
+      `UID:courtside-alarm-${a.id}@courtside`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART:${dateKey(when).replace(/-/g, "")}T${h}${m}00`,
+      "DURATION:PT5M",
+      ...(a.days.length ? [`RRULE:FREQ=WEEKLY;BYDAY=${a.days.map((d) => byday[d]).join(",")}`] : []),
+      `SUMMARY:${(a.label || ALARM_KINDS[a.kind]).replace(/[,;\\\n]/g, " ")}`,
+      "DESCRIPTION:Courtside alarm",
+      "BEGIN:VALARM", "ACTION:AUDIO", "TRIGGER:PT0M", "END:VALARM",
+      "END:VEVENT",
+    );
+  }
+  if (isPlayer()) state.schedule.forEach((e, i) => {
     if (e.type === "rest" || !e.time) return;
     let k = today();
     while (weekdayOf(k) !== i) k = addDays(k, 1);
@@ -1874,7 +2221,7 @@ async function offerFile(filename, data, okMsg) {
 
 // ---------- Router ----------
 
-const ROUTES = { learn: viewLearn, lesson: () => viewLesson(location.hash.slice("#lesson-".length)), home: viewHome, train: viewTrain, schedule: viewSchedule, fuel: viewFuel, sleep: viewSleep, feed: viewFeed, ranks: viewRanks, me: viewMe, plan: viewPlan, coach: viewCoach, quiz: viewQuiz };
+const ROUTES = { alarms: viewAlarms, learn: viewLearn, lesson: () => viewLesson(location.hash.slice("#lesson-".length)), home: viewHome, train: viewTrain, schedule: viewSchedule, fuel: viewFuel, sleep: viewSleep, feed: viewFeed, ranks: viewRanks, me: viewMe, plan: viewPlan, coach: viewCoach, quiz: viewQuiz };
 const PLAYER_ONLY = ["train", "schedule", "fuel", "sleep", "plan"];
 
 function route() {
@@ -1891,6 +2238,7 @@ function renderNav(r) {
   const activeTab = r === "lesson" ? "learn" : r;
   $("#nav").innerHTML = tabs.map((t) => `<a href="#${t}" class="${t === activeTab ? "active" : ""}">${icon(t)}<span>${labels[t]}</span></a>`).join("");
   $("#topbar").innerHTML = `<span class="wordmark">COURTSIDE</span><div class="top-actions">
+    <a href="#alarms" class="icon-btn ${r === "alarms" ? "active" : ""}" aria-label="Alarms">${icon("alarm")}</a>
     ${hasAI() && state.settings.aiCoach ? `<a href="#coach" class="icon-btn ${r === "coach" ? "active" : ""}" aria-label="AI Coach">${icon("coach")}</a>` : ""}
     <a href="#me" class="icon-btn ${r === "me" ? "active" : ""}" aria-label="My profile">${icon("me")}</a></div>`;
 }
@@ -1950,6 +2298,18 @@ function onSubmit(e) {
     award(XP.stat, "Stat logged");
     save();
     render();
+  } else if (f.id === "alarm-form") {
+    e.preventDefault();
+    const a = alarmFromForm(f);
+    const i = state.alarms.findIndex((x) => x.id === a.id);
+    if (i >= 0) state.alarms[i] = a;
+    else state.alarms.push(a);
+    delete state.alarmFired[a.id];
+    f.closest(".overlay").remove();
+    save();
+    const when = nextOccurrence(a.time, a.days);
+    toast(when ? `Alarm set. Rings in ${countdown(when - Date.now())}` : "Alarm saved");
+    render();
   } else if (f.id === "story-form") {
     e.preventDefault();
     submitStory(f);
@@ -2001,6 +2361,17 @@ function onChange(e) {
   } else if (t.dataset.actionChange === "swap") {
     regenerateSession(t.value);
     render();
+  } else if (t.dataset.alarmOn) {
+    const a = state.alarms.find((x) => x.id === t.dataset.alarmOn);
+    if (a) {
+      a.on = t.checked;
+      if (a.on) {
+        delete state.alarmFired[a.id];
+        primeAudio();
+      }
+      save();
+      render();
+    }
   } else if (t.id === "drill-pro") {
     drillPro = t.checked;
     render();
@@ -2164,6 +2535,56 @@ function onClick(e) {
       form.querySelector("#story-preview").dataset.bg = btn.dataset.bg;
       break;
     }
+    case "alarm-new":
+      primeAudio();
+      openAlarmEditor({ time: btn.dataset.time, kind: btn.dataset.kind, label: btn.dataset.kind === "workout" ? "Game day" : "", days: btn.dataset.kind === "wake" ? [1, 2, 3, 4, 5] : btn.dataset.kind === "bedtime" ? [0, 1, 2, 3, 4, 5, 6] : [], sound: btn.dataset.kind === "bedtime" ? "chime" : btn.dataset.kind === "workout" ? "horn" : "buzzer", snooze: 9, challenge: btn.dataset.kind === "wake" });
+      break;
+    case "alarm-edit": {
+      primeAudio();
+      const a = state.alarms.find((x) => x.id === btn.dataset.id);
+      if (a) openAlarmEditor(a);
+      break;
+    }
+    case "alarm-close":
+      btn.closest(".overlay").remove();
+      break;
+    case "alarm-kind":
+      btn.parentElement.querySelectorAll(".chip").forEach((c) => c.classList.toggle("active", c === btn));
+      $("#alarm-label").placeholder = ALARM_KINDS[btn.dataset.kind];
+      break;
+    case "alarm-day":
+      btn.classList.toggle("active");
+      btn.setAttribute("aria-pressed", btn.classList.contains("active"));
+      break;
+    case "alarm-days": {
+      const set = btn.dataset.days ? btn.dataset.days.split(",").map(Number) : [];
+      document.querySelectorAll(".day-pick").forEach((d) => {
+        const on = set.includes(Number(d.dataset.d));
+        d.classList.toggle("active", on);
+        d.setAttribute("aria-pressed", on);
+      });
+      break;
+    }
+    case "alarm-preview":
+      primeAudio();
+      playSound($("#alarm-sound").value);
+      break;
+    case "alarm-test": {
+      primeAudio();
+      const a = alarmFromForm($("#alarm-form"));
+      btn.closest(".overlay").remove();
+      fireAlarm(a, true);
+      break;
+    }
+    case "alarm-delete": {
+      const id = $("#alarm-form").dataset.id;
+      state.alarms = state.alarms.filter((a) => a.id !== id);
+      btn.closest(".overlay").remove();
+      save();
+      toast("Alarm deleted");
+      render();
+      break;
+    }
     case "learn-tab":
       learnTab = btn.dataset.tab;
       render();
@@ -2295,6 +2716,7 @@ document.addEventListener("click", onClick);
 window.addEventListener("hashchange", () => {
   closeStory();
   closeStoryComposer();
+  document.querySelector(".alarm-editor")?.remove();
   lessonAnswer = null;
   if (location.hash === "#quiz" && !quiz) quiz = { i: 0, a: {} };
   render();
