@@ -1,0 +1,10 @@
+{
+  "name": "Courtside",
+  "short_name": "Courtside",
+  "description": "Workouts, meal plans, progress tracking and motivation for basketball players.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0f1115",
+  "theme_color": "#ff6b1a",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
