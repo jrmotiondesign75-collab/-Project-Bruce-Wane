@@ -1,84 +1,66 @@
-// Static content: drills, meals, quotes, badges.
+// Static content: quiz, meals, quotes, badges, ranks, challenges.
 
-export const CATEGORIES = {
-  handles: { label: "Ball Handling", icon: "🏀" },
-  shooting: { label: "Shooting", icon: "🎯" },
-  footwork: { label: "Footwork", icon: "👟" },
-  strength: { label: "Strength", icon: "💪" },
-  vertical: { label: "Vertical", icon: "🚀" },
-  conditioning: { label: "Conditioning", icon: "🫀" },
-  mobility: { label: "Mobility", icon: "🧘" },
-};
-
-// minutes = time block; level = min level (1 beginner, 2 intermediate, 3 advanced)
-// positions: which positions benefit most (empty = everyone)
-export const DRILLS = [
-  // Ball handling
-  { id: "pound", cat: "handles", name: "Stationary Pound Dribbles", minutes: 4, level: 1, positions: [], how: "30s each hand: hard low pounds, then waist-high, then shoulder-high. Eyes up the whole time." },
-  { id: "figure8", cat: "handles", name: "Figure-8 Dribble", minutes: 3, level: 1, positions: [], how: "Dribble through and around your legs in a figure-8. Stay low, 3 x 45s with 15s rest." },
-  { id: "crossover-series", cat: "handles", name: "Crossover Series", minutes: 5, level: 1, positions: ["PG", "SG", "SF"], how: "Crossover, between-the-legs, behind-the-back: 10 reps each move, both directions, at game speed." },
-  { id: "two-ball", cat: "handles", name: "Two-Ball Dribbling", minutes: 6, level: 2, positions: ["PG", "SG"], how: "Two balls: together, alternating, then high-low. 45s each pattern. Fight to keep both alive." },
-  { id: "cone-attack", cat: "handles", name: "Cone Attack Combos", minutes: 6, level: 2, positions: ["PG", "SG", "SF"], how: "Set 5 cones 6 ft apart. Hit a different combo move at each cone and finish with a layup. 8 trips." },
-  { id: "tennis-ball", cat: "handles", name: "Tennis Ball Toss Dribble", minutes: 5, level: 3, positions: ["PG", "SG"], how: "Dribble with one hand while tossing and catching a tennis ball with the other. Switch hands every 30s." },
-
-  // Shooting
-  { id: "form", cat: "shooting", name: "Form Shooting", minutes: 5, level: 1, positions: [], how: "Start 3 ft from the rim. One hand, 10 makes per spot at 5 spots, stepping back a foot each round. Perfect follow-through." },
-  { id: "free-throws", cat: "shooting", name: "Free Throw Ladder", minutes: 5, level: 1, positions: [], how: "Shoot 2 free throws between every other drill or set. Log makes out of 20 total." },
-  { id: "spot-up", cat: "shooting", name: "5-Spot Spot-Up", minutes: 8, level: 1, positions: ["SG", "SF", "PF"], how: "Corners, wings, top. 10 shots per spot from mid-range or three. Track makes." },
-  { id: "off-dribble", cat: "shooting", name: "Off-the-Dribble Pull-Ups", minutes: 8, level: 2, positions: ["PG", "SG", "SF"], how: "One-dribble and two-dribble pull-ups going left and right from the elbows and wings. 40 shots." },
-  { id: "catch-shoot-sprint", cat: "shooting", name: "Sprint & Catch-and-Shoot", minutes: 8, level: 2, positions: ["SG", "SF"], how: "Sprint baseline to wing, catch (or self-pass) and shoot. Alternate sides. 30 shots at game speed." },
-  { id: "post-hooks", cat: "shooting", name: "Mikan Drill + Hooks", minutes: 6, level: 1, positions: ["PF", "C"], how: "Mikan drill 60s, then jump hooks from both blocks: 10 makes each side." },
-  { id: "game-shots", cat: "shooting", name: "Game-Speed Shot Circuit", minutes: 10, level: 3, positions: [], how: "Ten spots, one shot each, sprint between spots. 5 rounds. Shoot under fatigue like late in a game." },
-
-  // Footwork
-  { id: "jab-series", cat: "footwork", name: "Triple Threat Jab Series", minutes: 5, level: 1, positions: ["SG", "SF", "PF"], how: "From triple threat: jab and shoot, jab and drive, jab-crossover. 10 reps each, both pivot feet." },
-  { id: "drop-step", cat: "footwork", name: "Drop Steps & Up-and-Unders", minutes: 6, level: 1, positions: ["PF", "C"], how: "Catch on the block, drop step baseline and middle, then up-and-under. 8 each side." },
-  { id: "euro", cat: "footwork", name: "Euro Step & Pro Hop Finishes", minutes: 6, level: 2, positions: ["PG", "SG", "SF"], how: "From the wing: euro step, pro hop, and reverse layups. 6 makes each, both hands." },
-  { id: "ladder", cat: "footwork", name: "Agility Ladder", minutes: 5, level: 1, positions: [], how: "In-in-out-out, lateral shuffles, icky shuffle. 3 trips each, quick light feet." },
-  { id: "defensive-slides", cat: "footwork", name: "Defensive Slide Drill", minutes: 5, level: 1, positions: [], how: "Slide lane line to lane line for 30s, rest 30s, 5 rounds. Stay low, don't click your heels." },
-
-  // Strength
-  { id: "goblet-squat", cat: "strength", name: "Goblet Squats", minutes: 6, level: 1, positions: [], how: "4 x 10. Hold a dumbbell at your chest, sit between your heels, drive up through the whole foot." },
-  { id: "split-squat", cat: "strength", name: "Bulgarian Split Squats", minutes: 7, level: 2, positions: [], how: "3 x 8 each leg, rear foot on a bench. Builds single-leg strength for jumping and cutting." },
-  { id: "rdl", cat: "strength", name: "Romanian Deadlifts", minutes: 6, level: 2, positions: [], how: "4 x 8. Soft knees, push hips back, flat back. Hamstrings protect your knees on landings." },
-  { id: "pushups", cat: "strength", name: "Push-Up Variations", minutes: 5, level: 1, positions: [], how: "3 rounds: 10 regular, 8 wide, 6 close-grip. Rest 45s between rounds." },
-  { id: "core", cat: "strength", name: "Core Circuit", minutes: 6, level: 1, positions: [], how: "Plank 45s, side plank 30s each side, dead bugs x 12, hollow hold 30s. 2 rounds." },
-  { id: "pullups", cat: "strength", name: "Pull-Ups / Inverted Rows", minutes: 5, level: 1, positions: ["PF", "C"], how: "4 sets to 1-2 reps short of failure. Upper-back strength for rebounding and boxing out." },
-  { id: "calf-raises", cat: "strength", name: "Single-Leg Calf Raises", minutes: 4, level: 1, positions: [], how: "3 x 15 each leg off a step, 2s pause at the top. Strong calves help your ankles and your bounce." },
-
-  // Vertical
-  { id: "box-jumps", cat: "vertical", name: "Box Jumps", minutes: 5, level: 1, positions: [], how: "5 x 4. Max effort jump, land softly, step down. Full rest between sets: quality over quantity." },
-  { id: "approach-jumps", cat: "vertical", name: "Approach Jumps", minutes: 5, level: 1, positions: [], how: "3-step approach, jump to touch as high as you can. 3 x 5 off two feet, 3 x 5 off one foot." },
-  { id: "depth-jumps", cat: "vertical", name: "Depth Jumps", minutes: 5, level: 3, positions: [], how: "Step off a 12-18 in box, land and jump instantly. 4 x 4. Minimal ground contact." },
-  { id: "pogo", cat: "vertical", name: "Pogo Hops", minutes: 3, level: 1, positions: [], how: "Stiff ankles, quick bounces off the balls of your feet. 3 x 20s." },
-  { id: "broad-jumps", cat: "vertical", name: "Broad Jumps", minutes: 4, level: 1, positions: [], how: "4 x 3. Swing the arms, explode forward, stick the landing for 2 seconds." },
-  { id: "tip-drill", cat: "vertical", name: "Rim Tip Drill", minutes: 4, level: 2, positions: ["PF", "C"], how: "Tip the ball off the backboard continuously for 30s, 4 rounds. Second-jump quickness." },
-
-  // Conditioning
-  { id: "suicides", cat: "conditioning", name: "Suicide Sprints", minutes: 6, level: 1, positions: [], how: "Free throw line, half court, far free throw line, baseline. 6 reps, rest 45s each." },
-  { id: "17s", cat: "conditioning", name: "Sideline 17s", minutes: 6, level: 2, positions: [], how: "Sideline to sideline 17 times in under 60s. Rest 90s. 3-4 reps." },
-  { id: "full-court-layups", cat: "conditioning", name: "Full-Court Layups", minutes: 5, level: 1, positions: [], how: "Speed-dribble the length of the court, layup, sprint back the other way. 2 minutes on, 1 off, x 3." },
-  { id: "intervals", cat: "conditioning", name: "Court Intervals", minutes: 8, level: 2, positions: [], how: "20s all-out sprint, 40s jog. 8 rounds. Matches the stop-and-go of a real game." },
-  { id: "jump-rope", cat: "conditioning", name: "Jump Rope", minutes: 5, level: 1, positions: [], how: "5 x 60s with 20s rest. Mix two-foot, alternating, and double-unders." },
-
-  // Mobility
-  { id: "warmup", cat: "mobility", name: "Dynamic Warm-Up", minutes: 6, level: 1, positions: [], how: "High knees, butt kicks, carioca, walking lunges, leg swings, arm circles. Down and back for each." },
-  { id: "hip-mobility", cat: "mobility", name: "Hip Mobility Flow", minutes: 5, level: 1, positions: [], how: "90/90 switches, world's greatest stretch, deep squat hold. Hips loose = better first step." },
-  { id: "ankle-mobility", cat: "mobility", name: "Ankle Mobility", minutes: 4, level: 1, positions: [], how: "Knee-to-wall ankle stretches 2 x 10 each, banded ankle distractions, toe raises." },
-  { id: "cooldown", cat: "mobility", name: "Cool-Down Stretch", minutes: 5, level: 1, positions: [], how: "Hamstrings, quads, hip flexors, calves, shoulders. Hold each 30s and breathe slow." },
+// One question per screen. `type`: single | multi | number | text | body
+export const QUIZ = [
+  { id: "role", type: "single", q: "Are you a player or a coach?", options: [
+    { v: "player", label: "Player", sub: "Get a personal plan" },
+    { v: "coach", label: "Coach", sub: "Share drills and advice, track your players" },
+  ] },
+  { id: "handle", type: "text", q: "Pick your player tag", sub: "This is how you show up on leaderboards and the feed.", placeholder: "e.g. SplashKing23", max: 20 },
+  { id: "age", type: "number", q: "How old are you?", min: 10, max: 60, unit: "years", playerOnly: true },
+  { id: "body", type: "body", q: "Height and weight", sub: "Used for your nutrition targets. Only you see this.", playerOnly: true },
+  { id: "sex", type: "single", q: "Sex", sub: "Used only for the calorie formula.", playerOnly: true, options: [
+    { v: "male", label: "Male" }, { v: "female", label: "Female" },
+  ] },
+  { id: "position", type: "single", q: "What position do you play?", playerOnly: true, options: [
+    { v: "PG", label: "Point Guard" }, { v: "SG", label: "Shooting Guard" }, { v: "SF", label: "Small Forward" },
+    { v: "PF", label: "Power Forward" }, { v: "C", label: "Center" },
+  ] },
+  { id: "level", type: "single", q: "What level do you play at?", playerOnly: true, options: [
+    { v: 1, label: "Rec or middle school", sub: "Building the basics" },
+    { v: 2, label: "High school or AAU", sub: "Competing for minutes" },
+    { v: 3, label: "Varsity star, college or pro", sub: "Sharpening an advanced game" },
+  ] },
+  { id: "skillGoals", type: "multi", max: 2, q: "Skill goal: what do you want to improve most?", sub: "Pick up to 2.", playerOnly: true, options: [
+    { v: "shooting", label: "Shooting" }, { v: "handles", label: "Ball handling" }, { v: "finishing", label: "Finishing at the rim" },
+    { v: "defense", label: "Defense & rebounding" }, { v: "post", label: "Post game & footwork" },
+  ] },
+  { id: "physicalGoal", type: "single", q: "Physical goal", playerOnly: true, options: [
+    { v: "vertical", label: "Jump higher" }, { v: "speed", label: "Get faster and quicker" },
+    { v: "endurance", label: "Last all game" }, { v: "durable", label: "Stay healthy and injury-proof" },
+  ] },
+  { id: "strengthGoal", type: "single", q: "Strength goal", playerOnly: true, options: [
+    { v: "size", label: "Build muscle and size" }, { v: "strong", label: "Get stronger without bulking" },
+    { v: "core", label: "Core, balance and stability" }, { v: "light", label: "Not a priority right now" },
+  ] },
+  { id: "goal", type: "single", q: "Nutrition goal", playerOnly: true, options: [
+    { v: "gain", label: "Gain weight" }, { v: "lean", label: "Get leaner" },
+    { v: "maintain", label: "Maintain and fuel performance" }, { v: "learn", label: "Learn to eat better" },
+  ] },
+  { id: "diet", type: "single", q: "Any diet preference?", playerOnly: true, options: [
+    { v: "none", label: "No restrictions" }, { v: "vegetarian", label: "Vegetarian" }, { v: "vegan", label: "Vegan" }, { v: "dairy-free", label: "Dairy-free" },
+  ] },
+  { id: "equipment", type: "multi", q: "What do you have access to?", sub: "Pick all that apply.", playerOnly: true, options: [
+    { v: "hoop", label: "A hoop" }, { v: "weights", label: "Weights or a gym" }, { v: "partner", label: "A partner or team" },
+  ] },
+  { id: "daysPerWeek", type: "single", q: "How many days a week can you train?", playerOnly: true, options: [
+    { v: 3, label: "3 days" }, { v: 4, label: "4 days" }, { v: 5, label: "5 days" }, { v: 6, label: "6 days" },
+  ] },
+  { id: "sessionMinutes", type: "single", q: "How long is a session?", playerOnly: true, options: [
+    { v: 30, label: "30 minutes" }, { v: 45, label: "45 minutes" }, { v: 60, label: "60 minutes" }, { v: 90, label: "90 minutes" },
+  ] },
+  { id: "time", type: "single", q: "When do you like to train?", sub: "You can set exact times later.", playerOnly: true, options: [
+    { v: "06:00", label: "Early morning", sub: "6:00 AM" }, { v: "15:30", label: "After school", sub: "3:30 PM" },
+    { v: "18:00", label: "Evening", sub: "6:00 PM" }, { v: "20:00", label: "Night", sub: "8:00 PM" },
+  ] },
+  { id: "sleep", type: "single", q: "How much do you usually sleep?", playerOnly: true, options: [
+    { v: 5, label: "5 hours or less" }, { v: 6, label: "About 6 hours" }, { v: 7, label: "About 7 hours" }, { v: 8, label: "8 hours or more" },
+  ] },
+  { id: "obstacle", type: "single", q: "What usually gets in your way?", playerOnly: true, options: [
+    { v: "motivation", label: "Staying motivated" }, { v: "time", label: "Finding time" },
+    { v: "plan", label: "Not knowing what to work on" }, { v: "injury", label: "Soreness or injuries" },
+  ] },
 ];
-
-// Workout templates: the categories to fill, in order, after warm-up.
-export const FOCUSES = {
-  skills: { label: "Skill Day", desc: "Handles, shooting and footwork", blocks: ["handles", "shooting", "footwork", "shooting"] },
-  athletic: { label: "Athletic Day", desc: "Strength and vertical", blocks: ["vertical", "strength", "strength", "vertical", "strength"] },
-  conditioning: { label: "Game Shape", desc: "Conditioning with skills under fatigue", blocks: ["conditioning", "shooting", "handles", "conditioning"] },
-  shooter: { label: "Shooter's Session", desc: "Volume shooting, all game spots", blocks: ["shooting", "footwork", "shooting", "shooting"] },
-  recovery: { label: "Recovery Day", desc: "Light skill work and mobility", blocks: ["mobility", "shooting", "mobility"] },
-};
-
-// Weekly rotation by day of week (0 = Sunday)
-export const WEEK_PLAN = ["recovery", "skills", "athletic", "conditioning", "skills", "athletic", "shooter"];
 
 // Meals: kcal / protein / carbs / fat per serving; tags for dietary filters
 export const MEALS = {
@@ -135,24 +117,68 @@ export const QUOTES = [
   { text: "Nobody is going to hand you anything. Go get it.", by: "Unknown" },
 ];
 
-export const BADGES = [
-  { id: "first", icon: "🏁", name: "Tip-Off", desc: "Complete your first workout", test: (s) => s.workouts.length >= 1 },
-  { id: "five", icon: "🖐️", name: "Starting Five", desc: "Complete 5 workouts", test: (s) => s.workouts.length >= 5 },
-  { id: "twenty", icon: "🔥", name: "Gym Rat", desc: "Complete 20 workouts", test: (s) => s.workouts.length >= 20 },
-  { id: "fifty", icon: "🏆", name: "Hall of Grind", desc: "Complete 50 workouts", test: (s) => s.workouts.length >= 50 },
-  { id: "streak3", icon: "📆", name: "Three-Peat", desc: "3-day workout streak", test: (s, x) => x.bestStreak >= 3 },
-  { id: "streak7", icon: "⚡", name: "Week Warrior", desc: "7-day workout streak", test: (s, x) => x.bestStreak >= 7 },
-  { id: "hours5", icon: "⏱️", name: "Five Hours Deep", desc: "Train 300 total minutes", test: (s, x) => x.totalMinutes >= 300 },
-  { id: "logger", icon: "📈", name: "Stat Sheet", desc: "Log 5 progress entries", test: (s) => s.stats.length >= 5 },
-  { id: "meal", icon: "🥗", name: "Fuel Up", desc: "Check off every meal in a day", test: (s) => Object.values(s.mealsEaten || {}).some((d) => d.length >= 4) },
-  { id: "allround", icon: "🌟", name: "All-Around", desc: "Train every workout focus", test: (s) => new Set(s.workouts.map((w) => w.focus)).size >= 5 },
+
+export const CHALLENGES = [
+  "Make 50 free throws before you leave the gym.",
+  "100 weak-hand-only layups today.",
+  "Hold a wall sit for 3 total minutes.",
+  "Make 10 threes from each corner.",
+  "5 minutes of nonstop two-ball dribbling.",
+  "100 jump-rope skips without stopping.",
+  "Watch 10 minutes of film of a pro at your position.",
+  "Make 25 mid-range pull-ups going to your weak side.",
+  "Drink your full water target today.",
+  "Be in bed on time tonight. Recovery is training.",
+  "Do 50 push-ups spread across the day.",
+  "Make 7 free throws in a row, 3 times.",
 ];
 
-// Progress metrics a player can log
+// Rank tiers, each with three divisions (III → I), like ranked game modes
+export const TIERS = [
+  { name: "Bronze", color: "#c27a45" },
+  { name: "Silver", color: "#9aa6b2" },
+  { name: "Gold", color: "#e2b23c" },
+  { name: "Platinum", color: "#3fb8af" },
+  { name: "Diamond", color: "#5b8cff" },
+  { name: "Elite", color: "#b062ff" },
+  { name: "Legend", color: "#ff5a36" },
+];
+
+// XP for each task
+export const XP = {
+  drill: 10,
+  workout: 50,
+  onTime: 25,
+  recovery: 30,
+  sleepLog: 10,
+  sleepTarget: 15,
+  meal: 5,
+  allMeals: 20,
+  challenge: 25,
+  post: 10,
+  makes: 1, // per 5 made shots
+  stat: 10,
+};
+
+export const BADGES = [
+  { id: "first", name: "Tip-Off", desc: "Complete your first workout", test: (s) => s.workouts.length >= 1 },
+  { id: "five", name: "Starting Five", desc: "Complete 5 workouts", test: (s) => s.workouts.length >= 5 },
+  { id: "twenty", name: "Gym Rat", desc: "Complete 20 workouts", test: (s) => s.workouts.length >= 20 },
+  { id: "streak3", name: "Three-Peat", desc: "3-day streak", test: (s, x) => x.bestStreak >= 3 },
+  { id: "streak7", name: "Week Warrior", desc: "7-day streak", test: (s, x) => x.bestStreak >= 7 },
+  { id: "shots500", name: "500 Club", desc: "Make 500 tracked shots", test: (s, x) => x.makes >= 500 },
+  { id: "sleep7", name: "Sleep Is Training", desc: "Hit your sleep target 7 nights", test: (s, x) => x.sleepHits >= 7 },
+  { id: "kept10", name: "Promise Keeper", desc: "Keep 10 scheduled commitments", test: (s, x) => x.kept >= 10 },
+  { id: "recover", name: "Recovery Pro", desc: "Complete 3 active recovery days", test: (s) => s.workouts.filter((w) => w.type === "recovery").length >= 3 },
+  { id: "fuel", name: "Fuel Up", desc: "Eat every meal on your plan in a day", test: (s) => Object.values(s.mealsEaten || {}).some((d) => d.length >= 4) },
+  { id: "creator", name: "Content Creator", desc: "Share 3 posts or stories", test: (s) => (s.postsMade || 0) >= 3 },
+  { id: "pro-drills", name: "Pro Routine", desc: "Finish 10 drills from pro or college programs", test: (s, x) => x.proDrills >= 10 },
+];
+
 export const METRICS = {
   weight: { label: "Body Weight", unit: "lb", better: "neutral" },
   vertical: { label: "Vertical Jump", unit: "in", better: "up" },
-  sprint: { label: "3/4 Court Sprint", unit: "sec", better: "down" },
+  sprint: { label: "3/4-Court Sprint", unit: "sec", better: "down" },
+  lane: { label: "Lane Agility", unit: "sec", better: "down" },
   ft: { label: "Free Throws (of 20)", unit: "made", better: "up" },
-  threes: { label: "Threes (of 25)", unit: "made", better: "up" },
 };

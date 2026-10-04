@@ -1,38 +1,62 @@
 # Courtside 🏀
 
-A training companion for basketball players: daily workouts, meal plans, progress tracking, and motivation.
+Ranked basketball training. Players take a short quiz, get a personal program built from drills used by pro and college coaches, and level up by completing workouts, keeping their commitments, eating well and sleeping. A team feed lets players and coaches share drills, advice, wins and stories.
 
 ## Features
 
-- **Workouts**: a new session every day, built for your position, skill level, and session length. A weekly rotation covers skill, athletic, conditioning, shooting, and recovery days. Each drill comes with instructions and a countdown timer, and you can shuffle the drills or switch the day's focus.
-- **Meal plans**: calorie, protein, carb, fat, and water targets worked out from your body stats and goal (build muscle, maintain, or get leaner). The daily plan respects vegetarian, vegan, and dairy-free diets and scales portions to hit your target. Check off meals as you eat them.
-- **Progress**: workout count, hours, current and best streak, a 12-week training heatmap, and trend charts for weight, vertical jump, sprint time, free throws, and threes.
-- **Motivation**: streak flame, XP levels with ranks (Rookie → Legend), unlockable badges, a daily challenge, a quote of the day, and a coach message that reacts to how you've been training.
+- **Onboarding quiz**: one question per screen. It asks about role (player or coach), skill goals, physical, strength and nutrition goals, diet, available equipment, schedule, sleep and what usually gets in the way. The answers produce a named program, for example *Sharpshooter + Bounce*, with a weekly plan.
+- **Pro and college drills**: about 70 drills credited to the programs and players known for them, including Villanova (Jay Wright), Michigan State (Tom Izzo), Duke (Mike Krzyzewski), Kentucky (John Calipari), Pete Newell's Big Man Camp, George Mikan and Ray Meyer, Kobe Bryant, Stephen Curry and Brandon Payne, Ray Allen, Kevin Durant, Kyrie Irving, Hakeem Olajuwon, Dirk Nowitzki, Drew Hanlen, Chris Brickley and the NBA Draft Combine. Sources are listed in `js/drills.js` and in the app.
+- **Workouts**: sessions fit the player's level, position, equipment and session length. Each drill has a timer, and shooting drills have a make/miss tracker.
+- **Active recovery**: recovery days with mobility, foam rolling, yoga, easy cardio and breathing work.
+- **Editable schedule**: change any day's session and time. Each day can have an alarm.
+- **Reminders and alarms**: an in-app reminder at workout time, plus an optional alarm sound with snooze. You can also export the schedule as a calendar file with alerts, which work even when the app is closed.
+- **Nutrition**: calorie and macro targets, plus a daily meal plan that respects your diet.
+- **Sleep tracking**: log bed and wake times. The target depends on age, and a 14-night chart shows how often you hit it.
+- **Video-game progression**: XP for every task, with early levels coming fast. Rank tiers go from Bronze III to Legend, like ranked game modes. You get level-up and rank-up animations, an OVR player card, badges, daily quests and streaks.
+- **Leaderboards**: weekly XP, shots made, commitments kept, streak and level.
+- **Social feed**: drill, advice and win posts with photos or videos, 🔥 cheers and comments. Coaches get a badge. Stories last 24 hours.
+- **Story sharing**: post a workout to your in-app story, or save a 1080×1920 image to share on Instagram or TikTok.
+- **AI Coach** (optional): analyzes a workout or your week and answers training questions, using your own data.
 
-## Running it
+## How it runs
 
-There's no build step and nothing to install. Serve the folder with any static server:
+Courtside is a static web app with no build step. Serve the folder and open it:
 
 ```sh
 python3 -m http.server 8000
-# open http://localhost:8000
 ```
 
-It works on GitHub Pages, Netlify, Vercel, or any static host. On a phone, use "Add to Home Screen" to install it like an app.
+Opened this way, it works fully for one person, with data saved in the browser. The shared features (leaderboards, feed, stories, cloud sync, photo and video uploads, and AI Coach) use Claude artifact capabilities. They turn on when the app is published as a Claude artifact:
 
-All data stays in the browser (`localStorage`). There are no accounts and no server.
+```sh
+python3 build.py   # writes dist/courtside.html, a single page with everything inlined
+```
+
+Shared data layout:
+
+| Path | Who can read | Who can write |
+| --- | --- | --- |
+| `data/users/<id>/state` | only that player | only that player |
+| `players/<id>` (leaderboard card) | everyone | that player |
+| `feed/<id>` (posts and stories) | everyone | that player (the owner can remove posts) |
+| `cheers/<id>`, `comments/<id>` | everyone | that player |
+
+### Limits of the prototype
+
+- The in-app alarm only rings while the app is open. The calendar export gives real phone alerts. True background alarms and push notifications need a native app.
+- Players need access to the artifact link to sync and compete. Anyone who opens it with view-only access keeps their progress on their own device.
 
 ## Structure
 
 ```
-index.html            App shell and bottom navigation
-styles.css            Styles, with light and dark mode
-js/app.js             State, workout and meal-plan generation, views, events
-js/data.js            Drills, meals, quotes, badges, metrics
-manifest.webmanifest  Lets the app be installed on a phone
-icon.svg              App icon
+index.html     App shell
+styles.css     Game-style theme, dark and light
+js/drills.js   Drill library with sources
+js/data.js     Quiz, meals, quotes, badges, rank tiers, XP values
+js/engine.js   Plan building, workouts, nutrition, sleep, XP and ranks
+js/cloud.js    Claude capabilities (db, user, sample, assets, downloads) with fallbacks
+js/app.js      Views and interactions
+build.py       Bundles everything into dist/courtside.html
 ```
 
-To add drills or meals, add entries to `js/data.js`. The generators pick them up automatically.
-
-> Nutrition targets are estimates (Mifflin-St Jeor). They're not medical advice. Young athletes should check with a coach, trainer, or doctor before making big diet changes.
+> Nutrition targets are estimates, not medical advice. Young athletes should check with a coach, trainer or doctor before big diet changes. Drills are described in our own words and credited to the people known for them. Courtside isn't affiliated with or endorsed by them.
