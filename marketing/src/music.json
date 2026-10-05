@@ -1,0 +1,32 @@
+{
+ "ad1-your-program": {
+  "duration": 18.2,
+  "bpm": 112,
+  "key": "C",
+  "mood": "bright"
+ },
+ "ad2-rise-and-grind": {
+  "duration": 18.0,
+  "bpm": 118,
+  "key": "D",
+  "mood": "drive"
+ },
+ "ad3-study-the-game": {
+  "duration": 18.0,
+  "bpm": 104,
+  "key": "F",
+  "mood": "calm"
+ },
+ "ad4-climb-the-ranks": {
+  "duration": 18.0,
+  "bpm": 124,
+  "key": "E",
+  "mood": "hype"
+ },
+ "ad5-all-in-one": {
+  "duration": 18.4,
+  "bpm": 110,
+  "key": "G",
+  "mood": "bright"
+ }
+}

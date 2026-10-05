@@ -2809,6 +2809,8 @@ initCloud().then(async () => {
     watchCollection("cheers", (rows) => ((live.cheers = rows), softRender()));
     watchCollection("comments", (rows) => ((live.comments = rows), softRender()));
   }
-  // Light up cloud-only controls (AI Coach, uploads) once they resolve
-  if (state.profile && !$(".building")) softRender();
+  // Light up cloud-only controls (AI Coach, uploads) once they resolve, on any page
+  const a = document.activeElement;
+  const typing = a && $("#app").contains(a) && /INPUT|TEXTAREA|SELECT/.test(a.tagName);
+  if (state.profile && !$(".building") && !typing && route() !== "quiz") render();
 });

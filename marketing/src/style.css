@@ -1,0 +1,55 @@
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: #fff; }
+body { font-family: "Inter", sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased; }
+.stage { position: absolute; inset: 0; overflow: hidden; background: #fff; }
+.layer { position: absolute; will-change: transform, opacity, filter; }
+.glow { width: 1400px; height: 1400px; border-radius: 50%; left: -160px; top: 300px;
+  background: radial-gradient(circle, rgba(0,122,255,0.16), rgba(90,200,250,0.08) 40%, transparent 68%); filter: blur(10px); }
+
+.logo { left: 0; right: 0; top: 700px; display: grid; justify-items: center; gap: 34px; }
+.mark { width: 190px; height: 190px; border-radius: 48px; background: linear-gradient(160deg, #0a84ff, #0057d9); display: grid; place-items: center;
+  box-shadow: 0 30px 60px rgba(0, 87, 217, 0.28), inset 0 2px 0 rgba(255,255,255,0.35); }
+.mark svg { width: 120px; height: 120px; fill: none; stroke: #fff; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.word { font: 700 104px/1 "Inter Display", "Inter", sans-serif; letter-spacing: -0.035em; }
+.tag { font: 500 44px/1.2 "Inter", sans-serif; color: #6e6e73; letter-spacing: -0.015em; text-align: center; padding: 0 60px; }
+
+.cap { left: 80px; right: 80px; top: 150px; text-align: center; font: 700 92px/1.04 "Inter Display", "Inter", sans-serif; letter-spacing: -0.04em; }
+.cap .blue { background: linear-gradient(90deg, #0a84ff, #5ac8fa); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.sub { left: 110px; right: 110px; top: 380px; text-align: center; font: 500 40px/1.3 "Inter", sans-serif; color: #6e6e73; letter-spacing: -0.015em; }
+
+.phone { left: 50%; top: 560px; width: 640px; height: 1356px; margin-left: -320px; border-radius: 96px; background: #111; padding: 18px;
+  box-shadow: 0 60px 120px rgba(16, 24, 40, 0.22), 0 20px 40px rgba(16, 24, 40, 0.12), inset 0 0 0 3px #2a2a2c; }
+.screen { position: relative; width: 100%; height: 100%; border-radius: 80px; overflow: hidden; background: #fff; }
+.screen img { position: absolute; left: 0; top: 0; width: 100%; height: auto; will-change: transform, opacity; }
+.island { position: absolute; top: 22px; left: 50%; width: 190px; height: 54px; margin-left: -95px; background: #000; border-radius: 30px; z-index: 50; }
+.taps { position: absolute; inset: 0; z-index: 40; pointer-events: none; }
+.tap { position: absolute; width: 120px; height: 120px; border-radius: 50%; background: rgba(0, 122, 255, 0.35); box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.5); opacity: 0; }
+
+.chip { padding: 22px 34px; border-radius: 999px; font: 600 36px/1 "Inter", sans-serif; letter-spacing: -0.015em; white-space: nowrap;
+  background: rgba(255,255,255,0.74); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 18px 40px rgba(16, 24, 40, 0.14), inset 0 1.5px 0 rgba(255,255,255,0.9), 0 0 0 1px rgba(0,0,0,0.05); }
+.chip small { display: block; font: 600 24px/1 "Inter", sans-serif; color: #0a84ff; margin-bottom: 10px; }
+.chip.xp { font: 700 64px/1 "Inter Display", "Inter", sans-serif; color: #0a84ff; padding: 26px 44px; }
+.chip.dotted { display: flex; align-items: center; gap: 18px; font-size: 44px; padding: 26px 40px; }
+.chip.dotted::before { content: ""; width: 26px; height: 26px; border-radius: 50%; background: var(--dot); box-shadow: 0 0 0 6px color-mix(in srgb, var(--dot) 20%, transparent); }
+
+.tiers { left: 90px; right: 90px; top: 640px; display: grid; gap: 22px; }
+.tier { display: grid; grid-template-columns: 1fr; padding: 30px 40px; border-radius: 36px; font: 700 52px/1 "Inter Display", "Inter", sans-serif; letter-spacing: -0.02em;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c) 22%, #fff), #fff 80%); box-shadow: 0 14px 30px rgba(16,24,40,0.08), inset 0 0 0 2px color-mix(in srgb, var(--c) 45%, transparent); position: relative; }
+.tier span { position: absolute; left: 0; top: 0; bottom: 0; width: 14px; border-radius: 36px 0 0 36px; background: var(--c); }
+.tier b { font-weight: 700; }
+
+.fgrid { left: 80px; right: 80px; top: 640px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; }
+.fcell { display: grid; gap: 12px; padding: 40px 36px; border-radius: 40px; background: #f5f5f7; box-shadow: 0 14px 30px rgba(16,24,40,0.06); }
+.fcell i { width: 96px; height: 96px; border-radius: 26px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 14%, #fff); color: var(--c); }
+.fcell i svg { width: 56px; height: 56px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.fcell b { font: 700 50px/1 "Inter Display", "Inter", sans-serif; letter-spacing: -0.02em; }
+.fcell small { font: 500 30px/1.25 "Inter", sans-serif; color: #6e6e73; }
+
+.cta { left: 50%; top: 1250px; padding: 40px 72px; border-radius: 999px; background: #0a84ff; color: #fff; white-space: nowrap;
+  font: 600 46px/1 "Inter", sans-serif; letter-spacing: -0.015em; box-shadow: 0 24px 50px rgba(10, 132, 255, 0.35); }
+.fine { left: 0; right: 0; top: 1420px; text-align: center; font: 500 32px "Inter", sans-serif; color: #86868b; }
+/* Floating tags and type graphics sit in front of the phone */
+.phone { z-index: 5; }
+.chip, .tiers, .fgrid { z-index: 10; }
+.cap, .sub { z-index: 12; }
