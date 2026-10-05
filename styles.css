@@ -59,6 +59,46 @@
   color-scheme: light;
 }
 
+/* The player's appearance choice from the quiz or Settings ("system" follows the device) */
+:root[data-appearance="light"] {
+  --bg: #eef0f4;
+  --panel: #ffffff;
+  --panel-2: #f2f4f8;
+  --line: #dde2ea;
+  --ink: #12151b;
+  --muted: #5f6979;
+  --accent: #e85a06;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(232, 90, 6, 0.1);
+  --gold: #c98a0b;
+  --good: #12a066;
+  --bad: #d93a3a;
+  --shadow: 0 8px 24px rgba(20, 30, 50, 0.08);
+  color-scheme: light;
+}
+:root[data-appearance="dark"] {
+  --bg: #0d0f14;
+  --panel: #161a22;
+  --panel-2: #1f2430;
+  --line: #2a3140;
+  --ink: #f2f4f7;
+  --muted: #8f99aa;
+  --accent: #ff6a13;
+  --accent-ink: #1a0b02;
+  --accent-soft: rgba(255, 106, 19, 0.14);
+  --gold: #f5b83d;
+  --good: #2ecf8a;
+  --bad: #ff5d5d;
+  --protein: #ff5c8a;
+  --carbs: #4f8cff;
+  --fat: #f5b83d;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --body: Barlow, "Helvetica Neue", Arial, sans-serif;
+  --radius: 14px;
+  color-scheme: dark;
+}
+
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 
@@ -725,3 +765,7 @@ span.alarm-main { cursor: default; }
 .alarm-challenge .option { padding: 12px 14px; }
 .alarm-card.shake { animation: shake 0.35s; }
 @keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+
+/* Appearance picker in Settings */
+.appearance-row { display: grid; gap: 8px; font-weight: 600; }
+.seg-3 { grid-template-columns: repeat(3, 1fr); }

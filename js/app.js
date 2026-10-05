@@ -9,6 +9,15 @@ import { cloud, initCloud, hasSocial, loadPrivate, savePrivate, publishCard, wat
 // A build can turn the social layer (feed, stories, posting) off by setting
 // window.COURTSIDE = { social: false } before this script runs.
 const SOCIAL = !(window.COURTSIDE && window.COURTSIDE.social === false);
+const DEFAULT_APPEARANCE = (window.COURTSIDE && window.COURTSIDE.appearance) || "system";
+const APPEARANCES = { light: "Light", dark: "Dark", system: "Match device" };
+
+// Light, dark or follow the device. Uses its own attribute so it never fights
+// the data-theme the artifact viewer may set on <html>.
+function applyAppearance(v) {
+  document.documentElement.dataset.appearance = APPEARANCES[v] ? v : DEFAULT_APPEARANCE;
+}
+
 const activeBadges = () => BADGES.filter((b) => SOCIAL || b.id !== "creator");
 
 // ---------- State ----------
@@ -60,6 +69,7 @@ function loadLocal() {
 }
 
 let state = loadLocal();
+applyAppearance(state.settings && state.settings.appearance);
 
 function prune() {
   const cut = (arr, n) => (arr.length > n ? arr.slice(-n) : arr);
@@ -360,7 +370,7 @@ function startQuiz() {
   quiz = {
     i: 0,
     a: state.profile
-      ? { ...p, body: { heightIn: p.heightIn, weightLb: p.weightLb }, sleep: p.sleepNow }
+      ? { ...p, body: { heightIn: p.heightIn, weightLb: p.weightLb }, sleep: p.sleepNow, appearance: state.settings.appearance || DEFAULT_APPEARANCE }
       : {},
   };
   location.hash = "#quiz";
@@ -445,6 +455,7 @@ function quizNext(value) {
     value = Array.isArray(quiz.a[q.id]) ? quiz.a[q.id] : [];
   }
   quiz.a[q.id] = value;
+  if (q.id === "appearance") applyAppearance(value);
   if (quiz.i >= quizList().length - 1) return finishQuiz();
   quiz.i++;
   render();
@@ -477,6 +488,7 @@ function finishQuiz() {
       delete state.mealPlans[today()];
       if (firstTime) state.stats.push({ date: today(), metric: "weight", value: state.profile.weightLb });
     }
+    state.settings = { ...state.settings, appearance: a.appearance || DEFAULT_APPEARANCE };
     quiz = null;
     if (firstTime) award(20, "Profile complete");
     save();
@@ -1539,6 +1551,9 @@ function viewMe() {
 
   <section class="panel settings">
     <p class="eyebrow">Settings</p>
+    <div class="appearance-row"><span>Appearance</span>
+      <div class="seg seg-3" role="radiogroup" aria-label="Appearance">${Object.entries(APPEARANCES).map(([k, l]) => `<button role="radio" aria-checked="${(state.settings.appearance || DEFAULT_APPEARANCE) === k}" class="${(state.settings.appearance || DEFAULT_APPEARANCE) === k ? "active" : ""}" data-action="appearance" data-v="${k}">${l}</button>`).join("")}</div>
+    </div>
     <label class="toggle" for="set-ai"><input id="set-ai" type="checkbox" data-setting="aiCoach" ${state.settings.aiCoach ? "checked" : ""}><span>AI Coach ${hasAI() ? "" : "(works when opened from the Claude link)"}</span></label>
   </section>
 
@@ -2593,6 +2608,12 @@ function onClick(e) {
       render();
       break;
     }
+    case "appearance":
+      state.settings = { ...state.settings, appearance: btn.dataset.v };
+      applyAppearance(btn.dataset.v);
+      save();
+      render();
+      break;
     case "learn-tab":
       learnTab = btn.dataset.tab;
       render();
@@ -2691,6 +2712,7 @@ function onClick(e) {
     case "reset":
       if (btn.dataset.armed) {
         state = fresh();
+        applyAppearance();
         save();
         quiz = null;
         location.hash = "";
@@ -2755,6 +2777,7 @@ initCloud().then(async () => {
     const remote = await loadPrivate();
     if (remote && (remote.updatedAt || 0) > (state.updatedAt || 0)) {
       state = { ...fresh(), ...remote };
+      applyAppearance(state.settings && state.settings.appearance);
       try {
         localStorage.setItem(KEY, JSON.stringify(state));
       } catch {}

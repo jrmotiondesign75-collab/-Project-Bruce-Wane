@@ -20,7 +20,7 @@ def strip_module_syntax(src: str) -> str:
 
 THEMES = {
     "game": {"css": [], "title": "Courtside", "out": "courtside.html", "fonts": True, "config": None},
-    "premium": {"css": ["theme-premium.css"], "title": "Courtside Premium", "out": "courtside-premium.html", "fonts": False, "config": {"social": False}},
+    "premium": {"css": ["theme-premium.css"], "title": "Courtside Premium", "out": "courtside-premium.html", "fonts": False, "config": {"social": False, "appearance": "light"}},
 }
 
 

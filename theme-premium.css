@@ -1,9 +1,10 @@
 /* Premium theme, layered over styles.css (build with: python3 build.py --theme premium).
    Layout: same single column; Apple-style system type, borderless grouped cards,
    translucent chrome, rounded numerals, iOS controls, calm motion. */
-/* One committed light look: white canvas, soft gray cards, system-blue accent.
-   The tripled :root outranks the dark/light token blocks in styles.css so the
-   page stays white whatever the device's appearance setting. */
+/* Light by default: white canvas, soft gray cards, system-blue accent.
+   The tripled :root outranks the dark/light token blocks in styles.css.
+   Dark comes only from the player's appearance choice (data-appearance on
+   <html>, set by the app): "dark", or "system" on a dark device. */
 :root:root:root {
   --bg: #ffffff;
   --panel: #f5f5f7;
@@ -25,12 +26,98 @@
   --seg-on: #ffffff;
   --glass: rgba(255, 255, 255, 0.58);
   --glass-edge: rgba(255, 255, 255, 0.75);
+  --glass-hi: rgba(255, 255, 255, 0.5);
+  --glass-lo: rgba(255, 255, 255, 0.15);
+  --card: #ffffff;
+  --chrome: rgba(255, 255, 255, 0.72);
+  --nav-ink: #3a3a3c;
+  --press: rgba(0, 0, 0, 0.055);
+  --press-edge: rgba(255, 255, 255, 0.9);
+  --hover: rgba(0, 0, 0, 0.05);
+  --hairline: rgba(0, 0, 0, 0.06);
+  --alarm-a: rgba(255, 255, 255, 0.7);
+  --alarm-b: rgba(242, 242, 247, 0.92);
+  --celebrate-bg: rgba(255, 255, 255, 0.8);
+  --solid: #ffffff;
   --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, "Segoe UI", Roboto, sans-serif;
   --body: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
   --round: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif;
   --radius: 20px;
   color-scheme: light;
 }
+
+:root:root:root[data-appearance="dark"] {
+  --bg: #000000;
+  --panel: #1c1c1e;
+  --panel-2: rgba(118, 118, 128, 0.24);
+  --line: rgba(84, 84, 88, 0.6);
+  --ink: #ffffff;
+  --muted: rgba(235, 235, 245, 0.6);
+  --accent: #0a84ff;
+  --accent-soft: rgba(10, 132, 255, 0.18);
+  --gold: #ffd60a;
+  --good: #30d158;
+  --bad: #ff453a;
+  --protein: #ff375f;
+  --carbs: #5e5ce6;
+  --fat: #ffd60a;
+  --lift: 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  --seg-on: #636366;
+  --glass: rgba(36, 36, 38, 0.6);
+  --glass-edge: rgba(255, 255, 255, 0.14);
+  --glass-hi: rgba(255, 255, 255, 0.08);
+  --glass-lo: rgba(255, 255, 255, 0.02);
+  --card: #1c1c1e;
+  --chrome: rgba(0, 0, 0, 0.72);
+  --nav-ink: rgba(235, 235, 245, 0.75);
+  --press: rgba(255, 255, 255, 0.12);
+  --press-edge: rgba(255, 255, 255, 0.15);
+  --hover: rgba(255, 255, 255, 0.1);
+  --hairline: rgba(255, 255, 255, 0.08);
+  --alarm-a: rgba(0, 0, 0, 0.55);
+  --alarm-b: rgba(0, 0, 0, 0.9);
+  --celebrate-bg: rgba(0, 0, 0, 0.8);
+  --solid: #1c1c1e;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:root:root[data-appearance="system"] {
+    --bg: #000000;
+    --panel: #1c1c1e;
+    --panel-2: rgba(118, 118, 128, 0.24);
+    --line: rgba(84, 84, 88, 0.6);
+    --ink: #ffffff;
+    --muted: rgba(235, 235, 245, 0.6);
+    --accent: #0a84ff;
+    --accent-soft: rgba(10, 132, 255, 0.18);
+    --gold: #ffd60a;
+    --good: #30d158;
+    --bad: #ff453a;
+    --protein: #ff375f;
+    --carbs: #5e5ce6;
+    --fat: #ffd60a;
+    --lift: 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+    --seg-on: #636366;
+    --glass: rgba(36, 36, 38, 0.6);
+    --glass-edge: rgba(255, 255, 255, 0.14);
+    --glass-hi: rgba(255, 255, 255, 0.08);
+    --glass-lo: rgba(255, 255, 255, 0.02);
+    --card: #1c1c1e;
+    --chrome: rgba(0, 0, 0, 0.72);
+    --nav-ink: rgba(235, 235, 245, 0.75);
+    --press: rgba(255, 255, 255, 0.12);
+    --press-edge: rgba(255, 255, 255, 0.15);
+    --hover: rgba(255, 255, 255, 0.1);
+    --hairline: rgba(255, 255, 255, 0.08);
+    --alarm-a: rgba(0, 0, 0, 0.55);
+    --alarm-b: rgba(0, 0, 0, 0.9);
+    --celebrate-bg: rgba(0, 0, 0, 0.8);
+    --solid: #1c1c1e;
+    color-scheme: dark;
+  }
+}
+
 
 body {
   font: 17px/1.47 var(--body);
@@ -120,7 +207,7 @@ h2.display { font-size: 1.5rem; font-weight: 700; line-height: 1.15; }
   box-shadow: var(--lift), 0 0 0 0.5px color-mix(in srgb, var(--c) 28%, transparent);
   background:
     radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, var(--c) 16%, transparent), transparent 62%),
-    #ffffff;
+    var(--card);
 }
 .mission {
   background: radial-gradient(120% 120% at 100% 0%, var(--accent-soft), transparent 60%), var(--panel);
@@ -211,7 +298,7 @@ label { font-weight: 500; }
 /* ---------- Glass chrome ---------- */
 body { padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
 .topbar {
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--chrome);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
 }
@@ -227,7 +314,7 @@ body { padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
   border-radius: 999px;
   border: 0;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.15)),
+    linear-gradient(180deg, var(--glass-hi), var(--glass-lo)),
     var(--glass);
   -webkit-backdrop-filter: blur(24px) saturate(190%);
   backdrop-filter: blur(24px) saturate(190%);
@@ -236,7 +323,7 @@ body { padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
     0 2px 6px rgba(0, 0, 0, 0.06),
     inset 0 1px 0 var(--glass-edge),
     inset 0 -1px 0 rgba(0, 0, 0, 0.04),
-    0 0 0 0.5px rgba(0, 0, 0, 0.06);
+    0 0 0 0.5px var(--hairline);
 }
 .nav a {
   flex: 1;
@@ -244,17 +331,17 @@ body { padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
   gap: 2px;
   padding: 7px 2px 6px;
   border-radius: 999px;
-  color: #3a3a3c;
+  color: var(--nav-ink);
   transition: background-color 200ms ease, color 200ms ease, transform 100ms ease-out;
 }
 .nav a:active { transform: scale(0.94); }
 .nav a.active {
   color: var(--accent);
-  background: rgba(0, 0, 0, 0.055);
-  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.9);
+  background: var(--press);
+  box-shadow: inset 0 0.5px 0 var(--press-edge);
 }
 .icon-btn { border-radius: 50%; }
-.icon-btn.active, .icon-btn:hover { background: rgba(0, 0, 0, 0.05); }
+.icon-btn.active, .icon-btn:hover { background: var(--hover); }
 .icon-btn svg, .nav svg { stroke-width: 1.6; }
 #toasts { bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }
 .xp-float { bottom: calc(160px + env(safe-area-inset-bottom, 0px)); }
@@ -265,7 +352,7 @@ body { padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
-.sheet { background: #ffffff; border: 0; box-shadow: var(--lift); }
+.sheet { background: var(--card); border: 0; box-shadow: var(--lift); }
 .sheet, .composer-card, .alarm-card { border-radius: 28px; animation: sheetIn 420ms cubic-bezier(0.32, 0.72, 0, 1); }
 /* The alarm card redraws for the challenge, so fade the backdrop once instead of replaying the card */
 .alarm .alarm-card { animation: none; }
@@ -288,7 +375,7 @@ body { padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* Alarm: thin, large numerals like a clock */
-.alarm { background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--c) 18%, rgba(255, 255, 255, 0.7)), rgba(242, 242, 247, 0.92) 70%); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.alarm { background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--c) 18%, var(--alarm-a)), var(--alarm-b) 70%); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
 .alarm-time { font: 200 5.5rem/1 var(--round); letter-spacing: -0.04em; color: var(--ink); text-shadow: none; animation: none; }
 .alarm-time small, .pc-ovr .num small { font-weight: 400; letter-spacing: 0; }
 .alarm-rings span { border-width: 1px; }
@@ -321,7 +408,7 @@ body { padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
 .tier.current span { height: 6px; box-shadow: none; }
 
 /* Celebration: calm, critically damped */
-.celebrate { background: rgba(255, 255, 255, 0.8); color: var(--ink); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); }
+.celebrate { background: var(--celebrate-bg); color: var(--ink); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); }
 .celebrate .eyebrow, .celebrate .muted { color: var(--muted); }
 .big-level { font: 700 8rem/0.9 var(--round); text-shadow: none; animation: settle 520ms cubic-bezier(0.32, 0.72, 0, 1); }
 @keyframes settle { from { transform: scale(0.85); opacity: 0; } }
@@ -336,7 +423,7 @@ body { padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
   backdrop-filter: blur(20px) saturate(180%);
   color: var(--ink);
   font-weight: 500;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), inset 0 1px 0 var(--glass-edge), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), inset 0 1px 0 var(--glass-edge), 0 0 0 0.5px var(--hairline);
 }
 .toast.gold { background: var(--glass); color: var(--ink); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), inset 0 0 0 1px var(--gold); }
 .xp-float strong { font-weight: 700; color: var(--accent); text-shadow: none; }
@@ -345,7 +432,7 @@ body { padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
 /* ---------- Accessibility ---------- */
 @media (prefers-reduced-transparency: reduce) {
   .topbar { background: var(--bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
-  .nav, .toast { background: #ffffff; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .nav, .toast { background: var(--solid); backdrop-filter: none; -webkit-backdrop-filter: none; }
   .overlay, .celebrate { backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
 @media (prefers-contrast: more) {

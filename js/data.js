@@ -2,6 +2,11 @@
 
 // One question per screen. `type`: single | multi | number | text | body
 export const QUIZ = [
+  { id: "appearance", type: "single", q: "Light or dark?", sub: "Pick how Courtside looks. You can change it any time in Settings.", options: [
+    { v: "light", label: "Light", sub: "Bright and clean" },
+    { v: "dark", label: "Dark", sub: "Easy on the eyes at night" },
+    { v: "system", label: "Match my device", sub: "Follows your phone's light or dark setting" },
+  ] },
   { id: "role", type: "single", q: "Are you a player or a coach?", options: [
     { v: "player", label: "Player", sub: "Get a personal plan" },
     { v: "coach", label: "Coach", sub: "Share drills and advice, track your players" },
