@@ -1,7 +1,7 @@
 /* Premium theme, layered over styles.css (build with: python3 build.py --theme premium).
    Layout: same single column; Apple-style system type, borderless grouped cards,
    translucent chrome, rounded numerals, iOS controls, calm motion. */
-/* One committed light look: white canvas, soft gray cards, orange accent.
+/* One committed light look: white canvas, soft gray cards, system-blue accent.
    The tripled :root outranks the dark/light token blocks in styles.css so the
    page stays white whatever the device's appearance setting. */
 :root:root:root {
@@ -11,14 +11,14 @@
   --line: rgba(60, 60, 67, 0.16);
   --ink: #1d1d1f;
   --muted: #6e6e73;
-  --accent: #f26a0c;
+  --accent: #007aff;
   --accent-ink: #ffffff;
-  --accent-soft: rgba(242, 106, 12, 0.1);
+  --accent-soft: rgba(0, 122, 255, 0.1);
   --gold: #b97800;
   --good: #34c759;
   --bad: #ff3b30;
   --protein: #ff2d55;
-  --carbs: #007aff;
+  --carbs: #5856d6;
   --fat: #ff9f0a;
   --shadow: none;
   --lift: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 30px rgba(0, 0, 0, 0.07);
@@ -149,7 +149,7 @@ h2.display { font-size: 1.5rem; font-weight: 700; line-height: 1.15; }
 
 .bar { height: 6px; background: var(--panel-2); }
 .bar.xp { height: 6px; }
-.bar.xp > div { background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 50%, var(--gold))); }
+.bar.xp > div { background: linear-gradient(90deg, var(--accent), #5ac8fa); }
 .streak { border-radius: 999px; padding: 6px 12px; }
 .banner { animation: none; background: color-mix(in srgb, var(--accent) 18%, var(--panel)); color: var(--ink); border-radius: var(--radius); }
 .banner strong { color: var(--ink); }
@@ -355,3 +355,7 @@ body { padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
   .sheet, .composer-card, .alarm-card, .big-level, .alarm { animation: none !important; }
 }
 .post-actions .link, .danger-text { color: var(--bad); }
+
+/* Blue story backgrounds in place of the game theme's orange "ember" */
+.story-body, [data-bg="ember"] { background: linear-gradient(170deg, #0a84ff, #0b2f6b 60%, #050b17); }
+.bg-pick[data-bg="ember"] { background: linear-gradient(135deg, #0a84ff, #0b2f6b); }
