@@ -1,1 +1,3 @@
 dist/
+marketing/src/*.onnx
+marketing/src/voices-*.bin
