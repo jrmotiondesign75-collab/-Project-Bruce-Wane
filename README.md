@@ -33,7 +33,7 @@ Opened this way, it works fully for one person, with data saved in the browser. 
 
 ```sh
 python3 build.py                    # game style (default) → dist/courtside.html
-python3 build.py --theme premium    # Apple-inspired premium style → dist/courtside-premium.html
+python3 build.py --theme premium    # Apple-inspired premium style, no feed or stories → dist/courtside-premium.html
 ```
 
 Shared data layout:

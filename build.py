@@ -5,6 +5,7 @@ The artifact host wraps the page in its own <html>/<head>/<body>, so the output
 starts with <title> and <style> and inlines every script.
 """
 import argparse
+import json
 import pathlib
 import re
 
@@ -18,8 +19,8 @@ def strip_module_syntax(src: str) -> str:
 
 
 THEMES = {
-    "game": {"css": [], "title": "Courtside", "out": "courtside.html", "fonts": True},
-    "premium": {"css": ["theme-premium.css"], "title": "Courtside Premium", "out": "courtside-premium.html", "fonts": False},
+    "game": {"css": [], "title": "Courtside", "out": "courtside.html", "fonts": True, "config": None},
+    "premium": {"css": ["theme-premium.css"], "title": "Courtside Premium", "out": "courtside-premium.html", "fonts": False, "config": {"social": False}},
 }
 
 
@@ -32,12 +33,13 @@ def main() -> None:
     html = (ROOT / "index.html").read_text()
     body = html.split("<body>")[1].split("<script")[0]
     fonts = re.search(r'<link rel="stylesheet" href="(https://fonts\.googleapis\.com[^"]+)"', html).group(1)
+    config_script = f"<script>window.COURTSIDE = {json.dumps(theme['config'])};</script>\n" if theme["config"] else ""
     font_link = f'<link rel="stylesheet" href="{fonts}">\n' if theme["fonts"] else ""
     page = f"""<title>{theme["title"]}</title>
 {font_link}<style>
 {css}
 </style>
-{body}<script type="module">
+{body}{config_script}<script type="module">
 {js}
 </script>
 """

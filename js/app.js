@@ -4,6 +4,13 @@ import { TRACKS, LESSONS } from "./lessons.js";
 import { dateKey, parseKey, addDays, prettyDate, weekdayOf, weekKey, hashString, DAY_NAMES, formatTime, SESSION_TYPES, programName, recommendSchedule, weeklyFocus, sleepTarget, drill, isProDrill, buildWorkout, isShootingDrill, nutritionTargets, buildMealPlan, planMeal, sleepHours, levelInfo, rankFor, isTrainingDay, streak, bestStreak, ratings } from "./engine.js";
 import { cloud, initCloud, hasSocial, loadPrivate, savePrivate, publishCard, watchCollection, saveMyFeed, saveMyCheers, saveMyComments, removeOthersPost, uploadMedia, saveFile, hasAI, askCoach } from "./cloud.js";
 
+// ---------- Features ----------
+
+// A build can turn the social layer (feed, stories, posting) off by setting
+// window.COURTSIDE = { social: false } before this script runs.
+const SOCIAL = !(window.COURTSIDE && window.COURTSIDE.social === false);
+const activeBadges = () => BADGES.filter((b) => SOCIAL || b.id !== "creator");
+
 // ---------- State ----------
 
 const KEY = "courtside:v2";
@@ -194,7 +201,7 @@ function derived() {
 
 function checkBadges() {
   const x = derived();
-  for (const b of BADGES) {
+  for (const b of activeBadges()) {
     if (!state.badges.includes(b.id) && b.test(state, x)) {
       state.badges.push(b.id);
       toast(`Badge unlocked: ${b.name}`, "gold");
@@ -569,11 +576,11 @@ function viewHome() {
     { done: sleptToday, label: "Log last night's sleep", xp: XP.sleepLog + XP.sleepTarget, href: "#sleep" },
     { done: eaten.length >= plan.meals.length, label: `Eat your meal plan (${eaten.length}/${plan.meals.length})`, xp: XP.allMeals, href: "#fuel" },
     { done: challengeDone, label: challengeOfTheDay(), xp: XP.challenge, action: "challenge" },
-    { done: postedToday, label: "Share a post or story", xp: XP.post, href: "#feed" },
+    ...(SOCIAL ? [{ done: postedToday, label: "Share a post or story", xp: XP.post, href: "#feed" }] : []),
   ];
   const nextLesson = LESSONS.find((l) => !state.lessonsDone[l.id]);
   return `
-  ${storiesBar()}
+  ${SOCIAL ? storiesBar() : ""}
   ${hud()}
 
   ${reminderDue() ? `<a class="banner" href="#train"><strong>It's past ${formatTime(e.time)}. Time to train.</strong><span>Your ${type.label} is waiting →</span></a>` : ""}
@@ -616,15 +623,15 @@ function viewHome() {
 function viewCoachHome() {
   const players = live.players.filter((p) => p.role === "player" && p.week === weekKey()).sort((a, b) => (b.weekXp || 0) - (a.weekXp || 0)).slice(0, 5);
   return `
-  ${storiesBar()}
+  ${SOCIAL ? storiesBar() : ""}
   ${hud()}
   <section class="mission">
     <div class="mission-head">
       <p class="eyebrow">Coach HQ</p>
-      <h2 class="display">Share a drill</h2>
-      <p class="muted small">Post drills, advice and short clips for your players.</p>
+      <h2 class="display">${SOCIAL ? "Share a drill" : "Track your players"}</h2>
+      <p class="muted small">${SOCIAL ? "Post drills, advice and short clips for your players." : "See who's putting in the work and teach from the lesson library."}</p>
     </div>
-    <a class="btn primary" href="#feed">Post</a>
+    <a class="btn primary" href="${SOCIAL ? "#feed" : "#ranks"}">${SOCIAL ? "Post" : "Ranks"}</a>
   </section>
   <section class="panel">
     <p class="eyebrow">Top players this week</p>
@@ -676,7 +683,7 @@ function viewTrain() {
       <div><span class="num">+${last.xp}</span><small>XP</small></div>
     </div>
     <div class="actions">
-      <button class="btn primary" data-action="story-workout">Post to my story</button>
+      ${SOCIAL ? `<button class="btn primary" data-action="story-workout">Post to my story</button>` : ""}
       <button class="btn ghost" data-action="save-story">Save image for Instagram / TikTok</button>
       ${hasAI() && state.settings.aiCoach ? `<button class="btn ghost" data-action="analyze" data-ts="${last.ts}">Analyze with AI Coach</button>` : ""}
     </div>
@@ -1526,8 +1533,8 @@ function viewMe() {
   </section>` : ""}
 
   <section>
-    <h2 class="section-title">Badges <span class="muted small">${state.badges.length}/${BADGES.length}</span></h2>
-    <div class="badges">${BADGES.map((b) => `<div class="badge ${state.badges.includes(b.id) ? "got" : ""}"><strong>${b.name}</strong><small>${b.desc}</small></div>`).join("")}</div>
+    <h2 class="section-title">Badges <span class="muted small">${state.badges.filter((id) => activeBadges().some((b) => b.id === id)).length}/${activeBadges().length}</span></h2>
+    <div class="badges">${activeBadges().map((b) => `<div class="badge ${state.badges.includes(b.id) ? "got" : ""}"><strong>${b.name}</strong><small>${b.desc}</small></div>`).join("")}</div>
   </section>
 
   <section class="panel settings">
@@ -2228,12 +2235,13 @@ function route() {
   const r = location.hash.replace("#", "") || "home";
   if (r.startsWith("lesson-")) return "lesson";
   if (!ROUTES[r]) return "home";
+  if (!SOCIAL && r === "feed") return "home";
   if (!isPlayer() && PLAYER_ONLY.includes(r)) return "home";
   return r;
 }
 
 function renderNav(r) {
-  const tabs = isPlayer() ? ["home", "train", "learn", "fuel", "feed", "ranks"] : ["home", "learn", "feed", "ranks", "me"];
+  const tabs = (isPlayer() ? ["home", "train", "learn", "fuel", "feed", "ranks"] : ["home", "learn", "feed", "ranks", "me"]).filter((t) => SOCIAL || t !== "feed");
   const labels = { home: "Home", train: "Train", learn: "Learn", fuel: "Fuel", feed: "Feed", ranks: "Ranks", me: "Me" };
   const activeTab = r === "lesson" ? "learn" : r;
   $("#nav").innerHTML = tabs.map((t) => `<a href="#${t}" class="${t === activeTab ? "active" : ""}">${icon(t)}<span>${labels[t]}</span></a>`).join("");
@@ -2759,7 +2767,7 @@ initCloud().then(async () => {
       if (state.myPosts.length) saveMyFeed(state.profile.handle, state.profile.role, state.myPosts);
     }
     watchCollection("players", (rows) => ((live.players = rows), softRender()));
-    watchCollection("feed", (rows) => ((live.feeds = rows), softRender()));
+    if (SOCIAL) watchCollection("feed", (rows) => ((live.feeds = rows), softRender()));
     watchCollection("cheers", (rows) => ((live.cheers = rows), softRender()));
     watchCollection("comments", (rows) => ((live.comments = rows), softRender()));
   }
