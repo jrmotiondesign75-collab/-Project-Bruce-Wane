@@ -1,72 +1,34 @@
 /* Premium theme, layered over styles.css (build with: python3 build.py --theme premium).
    Layout: same single column; Apple-style system type, borderless grouped cards,
    translucent chrome, rounded numerals, iOS controls, calm motion. */
-:root {
-  --bg: #000000;
-  --panel: #1c1c1e;
-  --panel-2: rgba(118, 118, 128, 0.24);
-  --line: rgba(84, 84, 88, 0.6);
-  --ink: #ffffff;
-  --muted: rgba(235, 235, 245, 0.6);
-  --accent: #ff7a1a;
-  --accent-ink: #ffffff;
-  --accent-soft: rgba(255, 122, 26, 0.16);
-  --gold: #ffd60a;
-  --good: #30d158;
-  --bad: #ff453a;
-  --protein: #ff375f;
-  --carbs: #0a84ff;
-  --fat: #ffd60a;
-  --shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.06);
-  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, "Segoe UI", Roboto, sans-serif;
-  --body: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
-  --round: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif;
-  --radius: 20px;
-  --seg-on: #636366;
-  color-scheme: dark;
-}
-
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    --bg: #f2f2f7;
-    --panel: #ffffff;
-    --panel-2: rgba(118, 118, 128, 0.12);
-    --line: rgba(60, 60, 67, 0.22);
-    --ink: #1d1d1f;
-    --muted: rgba(60, 60, 67, 0.6);
-    --accent: #f26a0c;
-    --accent-ink: #ffffff;
-    --accent-soft: rgba(242, 106, 12, 0.1);
-    --gold: #c98400;
-    --good: #34c759;
-    --bad: #ff3b30;
-    --protein: #ff2d55;
-    --carbs: #007aff;
-    --fat: #ff9f0a;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 28px rgba(0, 0, 0, 0.06);
-    --seg-on: #ffffff;
-    color-scheme: light;
-  }
-}
-
-:root[data-theme="light"] {
-  --bg: #f2f2f7;
-  --panel: #ffffff;
+/* One committed light look: white canvas, soft gray cards, orange accent.
+   The tripled :root outranks the dark/light token blocks in styles.css so the
+   page stays white whatever the device's appearance setting. */
+:root:root:root {
+  --bg: #ffffff;
+  --panel: #f5f5f7;
   --panel-2: rgba(118, 118, 128, 0.12);
-  --line: rgba(60, 60, 67, 0.22);
+  --line: rgba(60, 60, 67, 0.16);
   --ink: #1d1d1f;
-  --muted: rgba(60, 60, 67, 0.6);
+  --muted: #6e6e73;
   --accent: #f26a0c;
   --accent-ink: #ffffff;
   --accent-soft: rgba(242, 106, 12, 0.1);
-  --gold: #c98400;
+  --gold: #b97800;
   --good: #34c759;
   --bad: #ff3b30;
   --protein: #ff2d55;
   --carbs: #007aff;
   --fat: #ff9f0a;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 28px rgba(0, 0, 0, 0.06);
+  --shadow: none;
+  --lift: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 30px rgba(0, 0, 0, 0.07);
   --seg-on: #ffffff;
+  --glass: rgba(255, 255, 255, 0.58);
+  --glass-edge: rgba(255, 255, 255, 0.75);
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, "Segoe UI", Roboto, sans-serif;
+  --body: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+  --round: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif;
+  --radius: 20px;
   color-scheme: light;
 }
 
@@ -155,10 +117,10 @@ h2.display { font-size: 1.5rem; font-weight: 700; line-height: 1.15; }
 .hud, .player-card, .game-card {
   border: 0;
   border-radius: 24px;
-  box-shadow: var(--shadow), 0 0 0 0.5px color-mix(in srgb, var(--c) 30%, transparent);
+  box-shadow: var(--lift), 0 0 0 0.5px color-mix(in srgb, var(--c) 28%, transparent);
   background:
-    radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, var(--c) 24%, transparent), transparent 62%),
-    var(--panel);
+    radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, var(--c) 16%, transparent), transparent 62%),
+    #ffffff;
 }
 .mission {
   background: radial-gradient(120% 120% at 100% 0%, var(--accent-soft), transparent 60%), var(--panel);
@@ -246,29 +208,64 @@ label { font-weight: 500; }
 .react { border: 0; background: var(--panel-2); }
 .react.on { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
 
-/* ---------- Translucent chrome ---------- */
+/* ---------- Glass chrome ---------- */
+body { padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
 .topbar {
-  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  background: rgba(255, 255, 255, 0.72);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
 }
+/* Floating glass tab bar: a capsule of frosted material with a bright top edge */
 .nav {
-  background: color-mix(in srgb, var(--panel) 72%, transparent);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
-  border-top: 0.5px solid var(--line);
+  left: 0;
+  right: 0;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  width: calc(100% - 24px);
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 6px;
+  border-radius: 999px;
+  border: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.15)),
+    var(--glass);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  backdrop-filter: blur(24px) saturate(190%);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.12),
+    0 2px 6px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 var(--glass-edge),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04),
+    0 0 0 0.5px rgba(0, 0, 0, 0.06);
 }
-.nav a { font: 500 0.66rem var(--body); gap: 3px; color: var(--muted); }
-.nav a.active { color: var(--accent); }
+.nav a {
+  flex: 1;
+  font: 500 0.66rem var(--body);
+  gap: 2px;
+  padding: 7px 2px 6px;
+  border-radius: 999px;
+  color: #3a3a3c;
+  transition: background-color 200ms ease, color 200ms ease, transform 100ms ease-out;
+}
+.nav a:active { transform: scale(0.94); }
+.nav a.active {
+  color: var(--accent);
+  background: rgba(0, 0, 0, 0.055);
+  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.9);
+}
 .icon-btn { border-radius: 50%; }
+.icon-btn.active, .icon-btn:hover { background: rgba(0, 0, 0, 0.05); }
 .icon-btn svg, .nav svg { stroke-width: 1.6; }
+#toasts { bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }
+.xp-float { bottom: calc(160px + env(safe-area-inset-bottom, 0px)); }
 
 /* ---------- Sheets & overlays ---------- */
 .overlay {
-  background: rgba(0, 0, 0, 0.42);
+  background: rgba(0, 0, 0, 0.28);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
+.sheet { background: #ffffff; border: 0; box-shadow: var(--lift); }
 .sheet, .composer-card, .alarm-card { border-radius: 28px; animation: sheetIn 420ms cubic-bezier(0.32, 0.72, 0, 1); }
 /* The alarm card redraws for the challenge, so fade the backdrop once instead of replaying the card */
 .alarm .alarm-card { animation: none; }
@@ -291,7 +288,7 @@ label { font-weight: 500; }
 }
 
 /* Alarm: thin, large numerals like a clock */
-.alarm { background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--c) 22%, rgba(0, 0, 0, 0.6)), rgba(0, 0, 0, 0.88) 70%); }
+.alarm { background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--c) 18%, rgba(255, 255, 255, 0.7)), rgba(242, 242, 247, 0.92) 70%); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
 .alarm-time { font: 200 5.5rem/1 var(--round); letter-spacing: -0.04em; color: var(--ink); text-shadow: none; animation: none; }
 .alarm-time small, .pc-ovr .num small { font-weight: 400; letter-spacing: 0; }
 .alarm-rings span { border-width: 1px; }
@@ -324,7 +321,8 @@ label { font-weight: 500; }
 .tier.current span { height: 6px; box-shadow: none; }
 
 /* Celebration: calm, critically damped */
-.celebrate { background: rgba(0, 0, 0, 0.82); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.celebrate { background: rgba(255, 255, 255, 0.8); color: var(--ink); -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%); }
+.celebrate .eyebrow, .celebrate .muted { color: var(--muted); }
 .big-level { font: 700 8rem/0.9 var(--round); text-shadow: none; animation: settle 520ms cubic-bezier(0.32, 0.72, 0, 1); }
 @keyframes settle { from { transform: scale(0.85); opacity: 0; } }
 .burst { border-width: 1px; }
@@ -333,21 +331,21 @@ label { font-weight: 500; }
 .toast {
   border-radius: 999px;
   padding: 11px 18px;
-  background: color-mix(in srgb, var(--panel) 82%, transparent);
+  background: var(--glass);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
   color: var(--ink);
   font-weight: 500;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25), 0 0 0 0.5px var(--line);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), inset 0 1px 0 var(--glass-edge), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
 }
-.toast.gold { background: color-mix(in srgb, var(--panel) 82%, transparent); color: var(--ink); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25), inset 0 0 0 1px var(--gold); }
+.toast.gold { background: var(--glass); color: var(--ink); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), inset 0 0 0 1px var(--gold); }
 .xp-float strong { font-weight: 700; color: var(--accent); text-shadow: none; }
 .xp-float span { letter-spacing: 0; text-transform: none; font-weight: 500; }
 
 /* ---------- Accessibility ---------- */
 @media (prefers-reduced-transparency: reduce) {
   .topbar { background: var(--bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
-  .nav, .toast { background: var(--panel); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .nav, .toast { background: #ffffff; backdrop-filter: none; -webkit-backdrop-filter: none; }
   .overlay, .celebrate { backdrop-filter: none; -webkit-backdrop-filter: none; }
 }
 @media (prefers-contrast: more) {
