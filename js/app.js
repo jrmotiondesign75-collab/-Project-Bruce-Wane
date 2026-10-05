@@ -127,7 +127,7 @@ function avatar(handle, color, size = "") {
 const ICONS = {
   home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
   train: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18M6 5.5c3 3 3 10 0 13M18 5.5c-3 3-3 10 0 13"/>',
-  fuel: '<path d="M7 3v8a3 3 0 0 0 3 3v7M10 3v6M4 3v6a3 3 0 0 0 3 3M17 21V3c2.5 1 4 3.5 4 7s-1.5 4-4 4"/>',
+  fuel: '<path d="M5.75 3v5a2.5 2.5 0 0 0 5 0V3M8.25 3v18M18.25 21V3C16.2 3.6 14.6 6.4 14.6 10.2c0 2.4 1.2 3.5 3.65 3.5"/>',
   feed: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M10 9l5 3-5 3z"/>',
   ranks: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/>',
   me: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
