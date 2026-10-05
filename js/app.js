@@ -68,7 +68,12 @@ function loadLocal() {
   return fresh();
 }
 
-let state = loadLocal();
+// Opening the app with #welcome runs it as a brand-new player: a fresh start
+// that never reads or writes saved data, so a real profile stays untouched.
+const PREVIEW = location.hash === "#welcome";
+if (PREVIEW) cloud.readOnly = true;
+
+let state = PREVIEW ? fresh() : loadLocal();
 applyAppearance(state.settings && state.settings.appearance);
 
 function prune() {
@@ -93,6 +98,7 @@ function prune() {
 function save() {
   state.updatedAt = Date.now();
   prune();
+  if (PREVIEW) return;
   try {
     localStorage.setItem(KEY, JSON.stringify(state));
   } catch {}
@@ -101,6 +107,10 @@ function save() {
 }
 
 const live = { players: [], feeds: [], cheers: [], comments: [] };
+
+function previewPill() {
+  return PREVIEW ? `<div class="preview-pill" role="status"><span>New-player preview · nothing is saved</span><button class="link" data-action="exit-preview">Exit</button></div>` : "";
+}
 
 // ---------- Helpers ----------
 
@@ -418,6 +428,7 @@ function viewQuiz() {
       <button class="btn primary big" data-action="quiz-next">Continue</button>`;
   }
   return `
+  ${previewPill()}
   <section class="quiz">
     <div class="quiz-top">
       ${quiz.i > 0 ? `<button class="link" data-action="quiz-back">← Back</button>` : state.profile ? `<a class="link" href="#me">Cancel</a>` : `<span class="wordmark">COURTSIDE</span>`}
@@ -2279,7 +2290,7 @@ function render() {
   $("#nav").hidden = false;
   $("#topbar").hidden = false;
   renderNav(r);
-  app.innerHTML = ROUTES[r]();
+  app.innerHTML = previewPill() + ROUTES[r]();
   app.dataset.route = r;
 }
 
@@ -2608,6 +2619,10 @@ function onClick(e) {
       render();
       break;
     }
+    case "exit-preview":
+      location.hash = "";
+      location.reload();
+      break;
     case "appearance":
       state.settings = { ...state.settings, appearance: btn.dataset.v };
       applyAppearance(btn.dataset.v);
@@ -2773,7 +2788,7 @@ setInterval(checkReminders, 15000);
 checkReminders();
 
 initCloud().then(async () => {
-  if (hasSocial()) {
+  if (hasSocial() && !PREVIEW) {
     const remote = await loadPrivate();
     if (remote && (remote.updatedAt || 0) > (state.updatedAt || 0)) {
       state = { ...fresh(), ...remote };

@@ -6,7 +6,7 @@
 //   cheers/<uid>             { ids: [postKey] } posts that player cheered
 //   comments/<uid>           { items: [{ key, text, ts }] } that player's comments
 
-export const cloud = { db: null, user: null, sample: null, assets: null, downloads: null, uid: null, ready: false, isOwner: false };
+export const cloud = { db: null, user: null, sample: null, assets: null, downloads: null, uid: null, ready: false, isOwner: false, readOnly: false };
 
 const use = (name) => (window.claude && typeof window.claude.use === "function" ? window.claude.use(name).catch(() => null) : Promise.resolve(null));
 
@@ -29,7 +29,7 @@ export const hasSocial = () => !!(cloud.db && cloud.uid);
 const writes = new Map(); // path -> { busy, pending }
 
 export function writeDoc(path, data) {
-  if (!cloud.db) return Promise.resolve();
+  if (!cloud.db || cloud.readOnly) return Promise.resolve();
   let w = writes.get(path);
   if (!w) writes.set(path, (w = { busy: false, pending: null, waiters: [] }));
   w.pending = data;
