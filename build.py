@@ -4,6 +4,7 @@
 The artifact host wraps the page in its own <html>/<head>/<body>, so the output
 starts with <title> and <style> and inlines every script.
 """
+import argparse
 import pathlib
 import re
 
@@ -16,22 +17,31 @@ def strip_module_syntax(src: str) -> str:
     return re.sub(r"^export ", "", src, flags=re.M)
 
 
+THEMES = {
+    "game": {"css": [], "title": "Courtside", "out": "courtside.html", "fonts": True},
+    "premium": {"css": ["theme-premium.css"], "title": "Courtside Premium", "out": "courtside-premium.html", "fonts": False},
+}
+
+
 def main() -> None:
-    css = (ROOT / "styles.css").read_text()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--theme", choices=THEMES, default="game", help="visual theme to bundle (default: game)")
+    theme = THEMES[parser.parse_args().theme]
+    css = "\n".join((ROOT / f).read_text() for f in ["styles.css", *theme["css"]])
     js = "\n".join(strip_module_syntax((ROOT / m).read_text()) for m in MODULES)
     html = (ROOT / "index.html").read_text()
     body = html.split("<body>")[1].split("<script")[0]
     fonts = re.search(r'<link rel="stylesheet" href="(https://fonts\.googleapis\.com[^"]+)"', html).group(1)
-    page = f"""<title>Courtside</title>
-<link rel="stylesheet" href="{fonts}">
-<style>
+    font_link = f'<link rel="stylesheet" href="{fonts}">\n' if theme["fonts"] else ""
+    page = f"""<title>{theme["title"]}</title>
+{font_link}<style>
 {css}
 </style>
 {body}<script type="module">
 {js}
 </script>
 """
-    out = ROOT / "dist" / "courtside.html"
+    out = ROOT / "dist" / theme["out"]
     out.parent.mkdir(exist_ok=True)
     out.write_text(page)
     print(f"Wrote {out} ({len(page) // 1024} KB)")

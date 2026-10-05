@@ -1,0 +1,359 @@
+/* Premium theme, layered over styles.css (build with: python3 build.py --theme premium).
+   Layout: same single column; Apple-style system type, borderless grouped cards,
+   translucent chrome, rounded numerals, iOS controls, calm motion. */
+:root {
+  --bg: #000000;
+  --panel: #1c1c1e;
+  --panel-2: rgba(118, 118, 128, 0.24);
+  --line: rgba(84, 84, 88, 0.6);
+  --ink: #ffffff;
+  --muted: rgba(235, 235, 245, 0.6);
+  --accent: #ff7a1a;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(255, 122, 26, 0.16);
+  --gold: #ffd60a;
+  --good: #30d158;
+  --bad: #ff453a;
+  --protein: #ff375f;
+  --carbs: #0a84ff;
+  --fat: #ffd60a;
+  --shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, "Segoe UI", Roboto, sans-serif;
+  --body: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+  --round: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif;
+  --radius: 20px;
+  --seg-on: #636366;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f2f2f7;
+    --panel: #ffffff;
+    --panel-2: rgba(118, 118, 128, 0.12);
+    --line: rgba(60, 60, 67, 0.22);
+    --ink: #1d1d1f;
+    --muted: rgba(60, 60, 67, 0.6);
+    --accent: #f26a0c;
+    --accent-ink: #ffffff;
+    --accent-soft: rgba(242, 106, 12, 0.1);
+    --gold: #c98400;
+    --good: #34c759;
+    --bad: #ff3b30;
+    --protein: #ff2d55;
+    --carbs: #007aff;
+    --fat: #ff9f0a;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 28px rgba(0, 0, 0, 0.06);
+    --seg-on: #ffffff;
+    color-scheme: light;
+  }
+}
+
+:root[data-theme="light"] {
+  --bg: #f2f2f7;
+  --panel: #ffffff;
+  --panel-2: rgba(118, 118, 128, 0.12);
+  --line: rgba(60, 60, 67, 0.22);
+  --ink: #1d1d1f;
+  --muted: rgba(60, 60, 67, 0.6);
+  --accent: #f26a0c;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(242, 106, 12, 0.1);
+  --gold: #c98400;
+  --good: #34c759;
+  --bad: #ff3b30;
+  --protein: #ff2d55;
+  --carbs: #007aff;
+  --fat: #ff9f0a;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 28px rgba(0, 0, 0, 0.06);
+  --seg-on: #ffffff;
+  color-scheme: light;
+}
+
+body {
+  font: 17px/1.47 var(--body);
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+main { gap: 16px; padding-top: 8px; }
+
+/* ---------- Type ---------- */
+.display, .quiz-q, .handle, .lesson-tile strong, .story-body h2.display, .track-head h2.display, .alarm-card h2.display, .lesson-hero h1.display {
+  font-family: var(--display);
+  text-transform: none;
+  letter-spacing: -0.022em;
+}
+h1.display { font-size: 2.125rem; font-weight: 700; line-height: 1.1; }
+h2.display { font-size: 1.5rem; font-weight: 700; line-height: 1.15; }
+.quiz-q { font: 700 1.875rem/1.15 var(--display); }
+.handle { font: 600 1.25rem var(--display); letter-spacing: -0.015em; }
+.lesson-tile strong { font: 600 1.125rem var(--display); letter-spacing: -0.015em; }
+.lesson-hero h1.display { font-size: 1.875rem; }
+.story-body h2.display { font-size: 2.4rem; }
+.alarm-card h2.display { font-size: 1.5rem; }
+
+.eyebrow, .celebrate .eyebrow, .story-body .eyebrow {
+  text-transform: none;
+  letter-spacing: -0.005em;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.result .eyebrow, .mission.complete .eyebrow { color: var(--good); }
+.lesson-hero .eyebrow { color: var(--t); }
+
+/* Rounded numerals for every stat */
+.num, .pc-ovr .num, .pc-parts .num, .ovr-num .num, .ovr-parts .num, .stat .num, .result-stats .num, .targets .num,
+.streak span, .board .pos, .board .val, .lesson-row .pos, .track-count, .wday .wn, .story-stats .num, .xp-float strong,
+.ability span, .big-level, .timer-face, .xp-tag, .lvl {
+  font-family: var(--round);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.pc-ovr .num { font-weight: 700; font-size: 3rem; }
+.pc-parts .num, .ovr-parts .num, .result-stats .num, .stat .num, .story-stats .num { font-weight: 600; }
+.ovr-num .num { font-weight: 700; }
+.board .val, .board .pos, .lesson-row .pos, .wday .wn, .track-count { font-weight: 600; }
+.ability span { font-weight: 600; font-size: 1.25rem; }
+.xp-tag { font-weight: 600; font-size: 0.85rem; }
+.lvl { font-weight: 600; font-size: 0.95rem; }
+.streak span { font-weight: 700; font-size: 1.35rem; }
+
+/* Labels: sentence case, no tracking */
+.pc-parts small, .ovr-num small, .ovr-parts small, .result-stats small, .targets small, .stat small, .story-stats small,
+.tier small, .ability small, .msg-tag, .switch, .seg button, .nav a, .rank-pill, .pc-tier, .coach-badge, .rank-name,
+.story-rank, .credit::before, .next-time > small, .sched .day, .week-list .day, .wday .wd {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.pc-parts small, .ovr-num small, .ovr-parts small, .result-stats small, .targets small, .stat small, .story-stats small {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.wordmark { font: 600 0.95rem var(--body); letter-spacing: 0.22em; color: var(--ink); }
+.credit { font-weight: 600; letter-spacing: 0; }
+.credit::before { content: "Pro · "; }
+.ability small { font: 600 0.8125rem var(--body); color: var(--accent); }
+.msg-tag { font: 600 0.75rem var(--body); color: var(--muted); }
+.sched .day, .week-list .day { font: 600 1rem var(--body); }
+.rank-name { font: 600 1.4rem var(--display); }
+.story-rank { font: 600 1rem var(--body); }
+
+/* ---------- Surfaces ---------- */
+.panel, .drill, .meal, .post, .board li, .lesson-row, .alarm-row, .sched li, .ability, .wday, .badge, .mission, .result, .lesson-tile, .seg, .notice, .wcard {
+  border: 0;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.panel, .drill, .meal, .post, .board li, .lesson-row, .alarm-row, .sched li, .ability, .badge, .lesson-tile { background: var(--panel); }
+.wcard { background: var(--panel-2); box-shadow: none; }
+.notice { background: var(--panel-2); color: var(--muted); box-shadow: none; }
+.drill.pro { border-left: 0; }
+.panel.warn { box-shadow: inset 0 0 0 1.5px var(--gold); }
+
+/* Hero cards: one soft glow of the tier color, no stripes */
+.hud, .player-card, .game-card {
+  border: 0;
+  border-radius: 24px;
+  box-shadow: var(--shadow), 0 0 0 0.5px color-mix(in srgb, var(--c) 30%, transparent);
+  background:
+    radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, var(--c) 24%, transparent), transparent 62%),
+    var(--panel);
+}
+.mission {
+  background: radial-gradient(120% 120% at 100% 0%, var(--accent-soft), transparent 60%), var(--panel);
+}
+.mission.complete, .result { box-shadow: var(--shadow), 0 0 0 1px color-mix(in srgb, var(--good) 45%, transparent); }
+.result { background: radial-gradient(120% 120% at 0% 0%, color-mix(in srgb, var(--good) 14%, transparent), transparent 60%), var(--panel); }
+.lesson-tile { background: radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--c) 16%, transparent), transparent 60%), var(--panel); }
+.pc-parts { border-top: 0.5px solid var(--line); }
+.ovr-num { border-right: 0.5px solid var(--line); }
+.quests li, .week-list li, .list li { border-bottom: 0.5px solid var(--line); }
+.list { border: 0; border-radius: var(--radius); box-shadow: var(--shadow); }
+
+.rank-pill, .pc-tier {
+  color: color-mix(in srgb, var(--c) 75%, var(--ink));
+  background: color-mix(in srgb, var(--c) 18%, transparent);
+  font: 600 0.75rem var(--body);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.coach-badge { border-radius: 999px; font: 600 0.68rem var(--body); padding: 1px 7px; }
+
+/* Avatars: circles */
+.av { border-radius: 50%; border: 0; background: color-mix(in srgb, var(--c) 32%, var(--panel)); font: 600 1rem var(--round); }
+.av.lg { border-radius: 50%; font-size: 1.35rem; }
+.hud .av { box-shadow: 0 0 0 2px var(--panel), 0 0 0 3.5px var(--c); }
+
+.bar { height: 6px; background: var(--panel-2); }
+.bar.xp { height: 6px; }
+.bar.xp > div { background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 50%, var(--gold))); }
+.streak { border-radius: 999px; padding: 6px 12px; }
+.banner { animation: none; background: color-mix(in srgb, var(--accent) 18%, var(--panel)); color: var(--ink); border-radius: var(--radius); }
+.banner strong { color: var(--ink); }
+
+/* ---------- Controls ---------- */
+.btn {
+  border: 0;
+  border-radius: 999px;
+  font: 600 0.95rem var(--body);
+  letter-spacing: -0.01em;
+  padding: 12px 18px;
+  transition: transform 100ms ease-out, background-color 150ms ease;
+}
+.btn.ghost { background: var(--panel-2); color: var(--ink); }
+.btn.primary { box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 30%, transparent); }
+.btn.big { border-radius: 16px; padding: 16px; font-size: 1.05rem; }
+.btn.small { padding: 7px 13px; font-size: 0.85rem; }
+.btn:active, .option:active, .chip:active, .ability:active, .lesson-row:active, .alarm-main:active, .react:active, .check:active, .quest-check:active, .day-pick:active {
+  transform: scale(0.97);
+  transition: transform 100ms ease-out;
+}
+.link { color: var(--accent); font-weight: 500; }
+.link:hover { color: var(--accent); opacity: 0.8; }
+.row-between > .link.small, .page-head .link { color: var(--accent); }
+
+.chip { border: 0; background: var(--panel-2); font: 500 0.875rem var(--body); padding: 8px 14px; }
+.chip.active { background: var(--ink); color: var(--bg); }
+
+.seg { padding: 2px; background: var(--panel-2); box-shadow: none; border-radius: 12px; gap: 2px; }
+.seg button { font: 600 0.875rem var(--body); padding: 8px; border-radius: 10px; color: var(--ink); }
+.seg button.active { background: var(--seg-on); color: var(--ink); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.04); }
+
+input, select, textarea { border: 0; background: var(--panel-2); border-radius: 12px; }
+label { font-weight: 500; }
+
+.option { border: 0; box-shadow: var(--shadow), inset 0 0 0 1.5px transparent; border-radius: 16px; transition: box-shadow 150ms ease, background-color 150ms ease, transform 100ms ease-out; }
+.option.selected { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.option.right { box-shadow: inset 0 0 0 1.5px var(--good); border: 0; }
+.option.wrong { box-shadow: inset 0 0 0 1.5px var(--bad); border: 0; }
+
+.check, .quest-check { border-radius: 50%; border: 1.5px solid var(--line); background: transparent; font: 600 0.95rem var(--round); }
+.quest-check { width: 24px; height: 24px; color: #fff; }
+.done > .check { color: #fff; }
+
+/* iOS switch */
+.switch { font: 500 0.875rem var(--body); color: var(--ink); gap: 10px; }
+.switch:has(input:checked) { color: var(--ink); }
+.switch input { width: 51px; height: 31px; border: 0; background: var(--panel-2); flex: none; }
+.switch input::after { top: 2px; left: 2px; width: 27px; height: 27px; background: #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 1px 1px rgba(0, 0, 0, 0.16); transition: transform 250ms cubic-bezier(0.32, 0.72, 0, 1); }
+.switch input:checked { background: var(--good); border: 0; }
+.switch input:checked::after { transform: translateX(20px); background: #fff; }
+.toggle input { accent-color: var(--good); }
+
+.day-pick { border: 0; background: var(--panel-2); color: var(--ink); font: 600 0.9rem var(--body); }
+.day-pick.active { background: var(--accent); color: var(--accent-ink); }
+.react { border: 0; background: var(--panel-2); }
+.react.on { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+
+/* ---------- Translucent chrome ---------- */
+.topbar {
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+}
+.nav {
+  background: color-mix(in srgb, var(--panel) 72%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-top: 0.5px solid var(--line);
+}
+.nav a { font: 500 0.66rem var(--body); gap: 3px; color: var(--muted); }
+.nav a.active { color: var(--accent); }
+.icon-btn { border-radius: 50%; }
+.icon-btn svg, .nav svg { stroke-width: 1.6; }
+
+/* ---------- Sheets & overlays ---------- */
+.overlay {
+  background: rgba(0, 0, 0, 0.42);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.sheet, .composer-card, .alarm-card { border-radius: 28px; animation: sheetIn 420ms cubic-bezier(0.32, 0.72, 0, 1); }
+/* The alarm card redraws for the challenge, so fade the backdrop once instead of replaying the card */
+.alarm .alarm-card { animation: none; }
+.alarm .alarm-card.shake { animation: shake 0.35s; }
+.alarm { animation: fadeIn 300ms ease-out; }
+@keyframes sheetIn { from { transform: translateY(28px); opacity: 0; } }
+@media (max-width: 600px) {
+  .alarm-editor, .story-composer { align-items: end; padding: 0; }
+  .alarm-editor .composer-card, .story-composer .composer-card {
+    width: 100%;
+    max-height: 92vh;
+    overflow-y: auto;
+    border-radius: 28px 28px 0 0;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    animation-duration: 480ms;
+  }
+  .alarm-editor .composer-card { animation-name: sheetUp; }
+  .story-composer .composer-card { animation-name: sheetUp; }
+  @keyframes sheetUp { from { transform: translateY(100%); } }
+}
+
+/* Alarm: thin, large numerals like a clock */
+.alarm { background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--c) 22%, rgba(0, 0, 0, 0.6)), rgba(0, 0, 0, 0.88) 70%); }
+.alarm-time { font: 200 5.5rem/1 var(--round); letter-spacing: -0.04em; color: var(--ink); text-shadow: none; animation: none; }
+.alarm-time small, .pc-ovr .num small { font-weight: 400; letter-spacing: 0; }
+.alarm-rings span { border-width: 1px; }
+.alarm-clock { font: 300 2.6rem/1 var(--round); letter-spacing: -0.03em; color: var(--ink); }
+.alarm-row { border-left: 0; }
+.alarm-row.off .alarm-clock, .alarm-row.off .who strong { color: var(--muted); }
+.alarm-row.off { opacity: 1; }
+.alarm-time-input { font: 200 3.4rem/1 var(--round); color: var(--ink); border-radius: 16px; }
+.next-time .num { font-weight: 300; font-size: 2.8rem; }
+.next-card .pc-id strong, .coach-card .pc-id strong { white-space: normal; overflow: visible; }
+.timer-face { font: 200 5rem/1 var(--round); }
+.timer-face.finished { animation: none; }
+
+/* Lists & learning */
+.key-points li::before { width: 6px; height: 6px; border-radius: 50%; transform: none; top: 0.65em; }
+.sched li.is-today { box-shadow: var(--shadow), inset 0 0 0 1.5px var(--accent); }
+.board li.me { background: radial-gradient(120% 140% at 0% 50%, var(--accent-soft), transparent 70%), var(--panel); box-shadow: var(--shadow), inset 0 0 0 1px color-mix(in srgb, var(--accent) 50%, transparent); }
+.wday { border-radius: 14px; }
+.wday.today { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.wday.done { box-shadow: inset 0 0 0 1.5px var(--good); }
+.wday.missed { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--bad) 60%, transparent); }
+.badge { border: 0; opacity: 0.45; }
+.badge.got { opacity: 1; border: 0; background: var(--panel); box-shadow: var(--shadow), inset 0 0 0 1px color-mix(in srgb, var(--gold) 55%, transparent); }
+.msg { border-radius: 20px; }
+.msg.assistant { border: 0; border-left: 0; background: var(--panel); box-shadow: var(--shadow); }
+.ability { border: 0; }
+.ability:hover { box-shadow: var(--shadow), inset 0 0 0 1px var(--accent); }
+.lesson-row:hover { box-shadow: var(--shadow), inset 0 0 0 1px var(--t); }
+.tier span { height: 4px; border-radius: 2px; }
+.tier.current span { height: 6px; box-shadow: none; }
+
+/* Celebration: calm, critically damped */
+.celebrate { background: rgba(0, 0, 0, 0.82); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.big-level { font: 700 8rem/0.9 var(--round); text-shadow: none; animation: settle 520ms cubic-bezier(0.32, 0.72, 0, 1); }
+@keyframes settle { from { transform: scale(0.85); opacity: 0; } }
+.burst { border-width: 1px; }
+
+/* Toasts: frosted capsules */
+.toast {
+  border-radius: 999px;
+  padding: 11px 18px;
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  color: var(--ink);
+  font-weight: 500;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25), 0 0 0 0.5px var(--line);
+}
+.toast.gold { background: color-mix(in srgb, var(--panel) 82%, transparent); color: var(--ink); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25), inset 0 0 0 1px var(--gold); }
+.xp-float strong { font-weight: 700; color: var(--accent); text-shadow: none; }
+.xp-float span { letter-spacing: 0; text-transform: none; font-weight: 500; }
+
+/* ---------- Accessibility ---------- */
+@media (prefers-reduced-transparency: reduce) {
+  .topbar { background: var(--bg); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .nav, .toast { background: var(--panel); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .overlay, .celebrate { backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+@media (prefers-contrast: more) {
+  .panel, .drill, .meal, .post, .board li, .lesson-row, .alarm-row, .sched li, .ability, .hud, .game-card, .player-card { box-shadow: inset 0 0 0 1px var(--ink); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet, .composer-card, .alarm-card, .big-level, .alarm { animation: none !important; }
+}
+.post-actions .link, .danger-text { color: var(--bad); }

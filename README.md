@@ -32,7 +32,8 @@ python3 -m http.server 8000
 Opened this way, it works fully for one person, with data saved in the browser. The shared features (leaderboards, feed, stories, cloud sync, photo and video uploads, and AI Coach) use Claude artifact capabilities. They turn on when the app is published as a Claude artifact:
 
 ```sh
-python3 build.py   # writes dist/courtside.html, a single page with everything inlined
+python3 build.py                    # game style (default) → dist/courtside.html
+python3 build.py --theme premium    # Apple-inspired premium style → dist/courtside-premium.html
 ```
 
 Shared data layout:
@@ -53,7 +54,8 @@ Shared data layout:
 
 ```
 index.html     App shell
-styles.css     Game-style theme, dark and light
+styles.css     Game-style theme, dark and light (the default)
+theme-premium.css  Premium theme layered over styles.css
 js/drills.js   Drill library with sources
 js/lessons.js  Lesson library (Skill, Physical, Mental)
 js/data.js     Quiz, meals, quotes, badges, rank tiers, XP values
