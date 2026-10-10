@@ -3,9 +3,9 @@
 
 Music is synthesized from scratch: FM electric piano, bell melody, finger snaps, shaker,
 sub bass, string pad, reverse-cymbal swells into cuts and a soft hit on the end card.
-The music ducks under the narrator (Kokoro TTS lines placed at their cue times).
+The music ducks under the narrator (one WAV per line, placed at its cue time).
 
-usage: python3 music2.py <ad-name> <cues.json> <vo-dir> <out.wav>
+usage: python3 music2.py <ad-name> <cues.json> <vo-dir> <out.wav> [narration.json]
 """
 import json
 import os
@@ -227,6 +227,7 @@ if __name__ == "__main__":
     name, cues_path, vo_dir, out = sys.argv[1:5]
     here = os.path.dirname(os.path.abspath(__file__))
     cfg = json.load(open(f"{here}/music.json"))[name]
-    narration = json.load(open(f"{here}/narration.json"))[name]
+    nar_path = sys.argv[5] if len(sys.argv) > 5 else f"{here}/narration.json"
+    narration = json.load(open(nar_path))[name]
     write_wav(out, compose(name, json.load(open(cues_path)), cfg, f"{vo_dir}/{name}", narration))
     print("wrote", out)
