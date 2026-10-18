@@ -42,7 +42,7 @@ EDITS = {
         dict(b0=26, b1=32, type="end", tin="flash", line=LINE, cta="Start your program", fine=FINE),
     ]),
     # 97.5 BPM. Wake-up / discipline. Hard cuts from the first bar.
-    "hype2-mist": dict(song="mist", start=0, fromTop=True, beats=36, pulseFrom=2, endAt=32, shakes=[2.5, 3, 3.5], shots=[
+    "hype2-mist": dict(song="mist", start=1.1, beats=36, pulseFrom=2, endAt=32, shakes=[2.5, 3, 3.5], shots=[
         dict(b0=0, b1=2, type="type", anim="slam", size="xl", lines=[L("6:15", 0)], kicker="AM · Rise & grind"),
         dict(b0=2, b1=4, type="device", tin="zoom", screen="alarm-ring", cam=[{"s": 1.12, "rx": 5}, {"s": 0.95, "rx": -3}]),
         dict(b0=4, b1=5, type="macro", tin="whip-up", screen="alarm-ring", focus=[[0.5, 0.3]], zoom=FULL),
@@ -98,8 +98,8 @@ EDITS = {
         dict(b0=37, b1=40, type="stack", tin="pull", screens=["result", "coach", "train", "drill-library", "plan"], turn=1),
         dict(b0=40, b1=52, type="end", tin="flash", line=LINE, cta="Start your program", fine=FINE),
     ]),
-    # 65.5 BPM, cut on 131 BPM half-beats. The bass drops out for a second, then slams back on beat 8.
-    "hype5-weongo": dict(song="weongo", anchor=(30.153, 8), div=2, beats=48, pulseFrom=8, pulseEvery=2, endAt=44, strobes=[6, 7, 7.5], shots=[
+    # 65.5 BPM, cut on 131 BPM half-beats. Starts on the song's first beat; the first slam lands on the next downbeat (beat 8).
+    "hype5-weongo": dict(song="weongo", start=0.835, div=2, beats=48, pulseFrom=8, pulseEvery=2, endAt=44, strobes=[6, 7, 7.5], shots=[
         dict(b0=0, b1=4, type="type", anim="track", lines=[L("Locked", 0), L("in.", 1.5, True)], cam=[{"s": 0.96}, {"s": 1.05}]),
         dict(b0=4, b1=8, type="macro", tin="zoom", screen="home", focus=[[0.5, 0.1], [0.5, 0.3]], zoom=FULL),
         dict(b0=8, b1=12, type="device", tin="slam", screen="ranks-board", cam=[{"s": 1.1, "ry": 10}, {"s": 0.93, "ry": -7}]),
