@@ -42,7 +42,7 @@ EDITS = {
         dict(b0=26, b1=32, type="end", tin="flash", line=LINE, cta="Start your program", fine=FINE),
     ]),
     # 97.5 BPM. Wake-up / discipline. Hard cuts from the first bar.
-    "hype2-mist": dict(song="mist", start=1.1, beats=36, pulseFrom=2, endAt=32, shakes=[2.5, 3, 3.5], shots=[
+    "hype2-mist": dict(song="mist", start=0, fromTop=True, beats=36, pulseFrom=2, endAt=32, shakes=[2.5, 3, 3.5], shots=[
         dict(b0=0, b1=2, type="type", anim="slam", size="xl", lines=[L("6:15", 0)], kicker="AM · Rise & grind"),
         dict(b0=2, b1=4, type="device", tin="zoom", screen="alarm-ring", cam=[{"s": 1.12, "rx": 5}, {"s": 0.95, "rx": -3}]),
         dict(b0=4, b1=5, type="macro", tin="whip-up", screen="alarm-ring", focus=[[0.5, 0.3]], zoom=FULL),
@@ -132,13 +132,18 @@ def build(name, e, beats_dir, out_dir):
     div = e.get("div", 1)  # subdivide the grid (2 = cut on half-beats of a half-time feel)
     if div > 1:
         beats = [a + (b - a) * k / div for a, b in zip(beats, beats[1:]) for k in range(div)]
-    if "anchor" in e:  # (song time, edit beat): lock that edit beat to a moment in the song, e.g. the drop
+    if e.get("fromTop"):  # start on the song's very first beat, extending the grid back to the top if needed
+        per = beats[1] - beats[0]
+        while beats[0] - per > -0.05:
+            beats = [beats[0] - per] + beats
+        i0 = 0
+    elif "anchor" in e:  # (song time, edit beat): lock that edit beat to a moment in the song, e.g. the drop
         at, k = e["anchor"]
         i0 = min(range(len(beats)), key=lambda i: abs(beats[i] - at)) - k
     else:  # start on the downbeat nearest `start`
         t_start = min(bj["downbeats"], key=lambda d: abs(d - e["start"]))
         i0 = min(range(len(beats)), key=lambda i: abs(beats[i] - t_start))
-    t0 = beats[i0]
+    t0 = max(0.0, beats[i0]) if e.get("fromTop") else beats[i0]
     rel = [round(b - t0, 4) for b in beats[i0:i0 + e["beats"] + 4]]
     duration = round(rel[e["beats"]], 3)
     shots = []

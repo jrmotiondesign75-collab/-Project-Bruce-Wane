@@ -54,7 +54,7 @@ Audio is normalized to -14 LUFS, the level most social platforms use.
 | Edit | Song | Clip | Tempo |
 | --- | --- | --- | --- |
 | `hype1-flashing` | Flashing Lights (Kanye West feat. Dwele) | 21.8 s to 43.0 s. The drum drop at 27.1 s lands on the first hard cut | 90.5 BPM |
-| `hype2-mist` | Mist (Instrumental) (Dev1lHawk, xaviorthemachine) | 2.4 s to 24.6 s | 97.5 BPM |
+| `hype2-mist` | Mist (Instrumental) (Dev1lHawk, xaviorthemachine) | 0.0 s to 22.1 s (the top of the song) | 97.5 BPM |
 | `hype3-needit` | Need It (Migos feat. YoungBoy Never Broke Again) | 8.9 s to 30.0 s. The vocals hit on the first hard cut | 74 BPM, cut on 148 BPM half-beats |
 | `hype4-hot` | Hot (Young Thug feat. Gunna) | 1.5 s to 22.4 s. The 808 drop at 6.4 s lands on the first hard cut | 149 BPM |
 | `hype5-weongo` | WE ON GO (BIA) | 26.5 s to 48.5 s. The bass drops out, then slams back at 30.2 s on the first hard cut | 65.5 BPM, cut on 131 BPM half-beats |
