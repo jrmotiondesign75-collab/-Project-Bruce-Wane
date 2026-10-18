@@ -136,7 +136,8 @@
           const z = lerp(s.zoom[0], s.zoom[1] ?? s.zoom[0], u);
           const iw = 940 * z, ih = iw * (1688 / 780);
           im.style.width = iw + "px";
-          im.style.transform = `translate(${470 - fx * iw}px, ${800 - fy * ih}px)`;
+          const tx = clamp(470 - fx * iw, 940 - iw, 0), ty = clamp(800 - fy * ih, 1600 - ih, 0);
+          im.style.transform = `translate(${tx}px, ${ty}px)`;
         }
       }
       if (s.type === "type") {
@@ -148,14 +149,14 @@
             const el = $(`g${s.i}_${li}_${ci}`);
             const mode = s.anim || "rise";
             if (mode === "rise") {
-              const a = outExpo(clamp((lt - ts - ci * 0.025) / 0.35));
-              el.style.transform = `translateY(${(1 - a) * 120}%)`; el.style.opacity = a; el.style.filter = a < 0.98 ? `blur(${(1 - a) * 14}px)` : "none";
+              const a = outExpo(clamp((lt - ts - ci * 0.018) / 0.3));
+              el.style.transform = `translateY(${(1 - a) * 90}%)`; el.style.opacity = clamp(a * 1.6); el.style.filter = a < 0.9 ? `blur(${(1 - a) * 10}px)` : "none";
             } else if (mode === "slam") {
               el.style.opacity = lt >= ts ? 1 : 0;
             } else if (mode === "track") { // letters fly together from wide tracking
-              const a = outExpo(clamp((lt - ts) / 0.6));
-              const off = (ci - (chars.length - 1) / 2) * (1 - a) * 90;
-              el.style.transform = `translateX(${off}px)`; el.style.opacity = clamp(a * 2); el.style.filter = a < 0.98 ? `blur(${(1 - a) * 18}px)` : "none";
+              const a = outExpo(clamp((lt - ts) / 0.45));
+              const off = (ci - (chars.length - 1) / 2) * (1 - a) * 70;
+              el.style.transform = `translateX(${off}px)`; el.style.opacity = clamp(a * 2.5); el.style.filter = a < 0.9 ? `blur(${(1 - a) * 12}px)` : "none";
             }
           });
           // `swap` lines replace each other: each shows from its start until the next one starts
@@ -165,8 +166,8 @@
             lnEl.style.display = lt >= ts && lt < nx ? "" : "none";
           }
           if ((s.anim || "rise") === "slam") { // the whole word slams in from oversized, settling with overshoot
-            const a = spring(lt - ts, 0.3, 0.5);
-            lnEl.style.transform = `scale(${lerp(2.6, 1, a)})`;
+            const a = spring(lt - ts, 0.22, 0.55), from = li === 0 ? 1.9 : 1.5; // later lines land smaller so they never cover the first
+            lnEl.style.transform = `scale(${lerp(from, 1, a)})`;
             lnEl.style.filter = lt - ts < 0.06 && lt >= ts ? "blur(8px)" : "none";
           }
         });
@@ -177,7 +178,14 @@
         const v = Math.round(lerp(s.from, s.to, u));
         $("cv" + s.i).innerHTML = esc(s.prefix || "") + v.toLocaleString("en-US") + (s.suffix ? `<small>${esc(s.suffix)}</small>` : "");
         const p = spring(lt - dur * 0.8, 0.3, 0.45); // pop when it lands
-        $("cv" + s.i).style.transform = `scale(${1 + 0.12 * Math.sin(Math.PI * clamp(p))})`;
+        if (s._fit === undefined && document.fonts.status === "loaded") { // size to the final value so it never runs off screen
+          const cv = $("cv" + s.i), sh = $("s" + s.i), was = sh.style.display, keep = cv.innerHTML;
+          sh.style.display = "block";
+          cv.innerHTML = esc(s.prefix || "") + s.to.toLocaleString("en-US") + (s.suffix ? `<small>${esc(s.suffix)}</small>` : "");
+          s._fit = Math.min(1, 900 / cv.offsetWidth);
+          cv.innerHTML = keep; sh.style.display = was;
+        }
+        $("cv" + s.i).style.transform = `scale(${(s._fit || 1) * (1 + 0.12 * Math.sin(Math.PI * clamp(p)))})`;
       }
       if (s.type === "stack") { // coverflow: cards slide past centre, tilting away on each side
         const n = s.screens.length;
@@ -228,8 +236,23 @@
       .concat((E.strobes || []).map((b) => ({ t: bt(b), k: 0.8 })));
     const shakes = shots.filter((s) => s.tin && s.tin.startsWith("slam")).map((s) => s.t0).concat((E.shakes || []).map(bt));
 
+    // shrink any line of type that would run past the safe margin (once fonts have loaded)
+    let fitted = false;
+    function fitType() {
+      if (fitted || document.fonts.status !== "loaded") return;
+      document.querySelectorAll(".ln").forEach((ln) => {
+        const sh = ln.closest(".shot"), was = sh.style.display;
+        sh.style.display = "block";
+        const w = [...ln.children].reduce((sum, g) => sum + g.offsetWidth, 0), max = 960; // offsetWidth ignores transforms
+        if (w > max) ln.style.fontSize = parseFloat(getComputedStyle(ln).fontSize) * (max / w) + "px";
+        sh.style.display = was;
+      });
+      fitted = true;
+    }
+
     const prev = {};
     window.render = function (t) {
+      fitType();
       const p = pulse(t);
       let sx = 0, sy = 0, sr = 0;
       shakes.forEach((t0) => { const d = t - t0; if (d > 0 && d < 0.35) { const a = Math.exp(-d * 12) * 26; sx += Math.sin(d * 97) * a; sy += Math.cos(d * 83) * a; sr += Math.sin(d * 61) * a * 0.04; } });
@@ -249,11 +272,12 @@
         el.style.transform = `translate(${o.x}px, ${o.y}px) scale(${o.sc}) rotate(${o.r}deg)`;
         const c = camAt(s, t);
         $("c" + s.i).style.transform = `perspective(2200px) translate(${c.x}px, ${c.y}px) scale(${c.s}) rotateX(${c.rx}deg) rotateY(${c.ry}deg) rotate(${c.r}deg)`;
-        // directional motion blur from on-screen velocity (shot transform + camera)
+        // directional motion blur from on-screen velocity
         const key = s.i, dt = 1 / 60;
-        const o2 = shotXform(s, t - dt), c2 = camAt(s, t - dt);
-        const vx = (o.x + c.x - o2.x - c2.x), vy = (o.y + c.y - o2.y - c2.y);
-        const vs = Math.abs(o.sc * c.s - o2.sc * c2.s) * 900 + Math.abs(o.r - o2.r) * 12;
+        // blur comes only from transition movement, so a shot is always sharp while it presents
+        const o2 = shotXform(s, t - dt);
+        const vx = o.x - o2.x, vy = o.y - o2.y;
+        const vs = Math.abs(o.sc - o2.sc) * 900 + Math.abs(o.r - o2.r) * 12;
         const vsb = Math.min(14, vs * 0.12);
         const bx = Math.min(60, Math.abs(vx) * 0.32 + vsb), by = Math.min(60, Math.abs(vy) * 0.32 + vsb);
         const tag = bx.toFixed(1) + " " + by.toFixed(1);
