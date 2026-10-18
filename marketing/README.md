@@ -46,3 +46,25 @@ ffmpeg -framerate 30 -i /tmp/ad2/f_%05d.jpg -i /tmp/ad2.wav \
 ```
 
 Audio is normalized to -14 LUFS, the level most social platforms use.
+
+## Hype edits (beat-synced, licensed-music versions)
+
+`src/hype/` holds a second, faster style: rapid cuts locked to a song's beat grid, with whip, spin, zoom-through, pull-back, slam and flash transitions, directional motion blur, speed-ramped camera moves, kinetic type, counters, a coverflow carousel and a pulse on every beat. It renders at 60 fps.
+
+| Edit | Song | Clip | Tempo |
+| --- | --- | --- | --- |
+| `hype1-flashing` | Flashing Lights (Kanye West feat. Dwele) | 21.8 s to 43.0 s. The drum drop at 27.1 s lands on the first hard cut | 90.5 BPM |
+| `hype2-mist` | Mist (Instrumental) (Dev1lHawk, xaviorthemachine) | 2.4 s to 24.6 s | 97.5 BPM |
+| `hype3-needit` | Need It (Migos feat. YoungBoy Never Broke Again) | 8.9 s to 30.0 s. The vocals hit on the first hard cut | 74 BPM, cut on 148 BPM half-beats |
+
+**The songs are not licensed.** They are commercial recordings, so these MP4s are not in the repo, and they must not be used in paid ads. They are fine as a reference cut, or for an organic post where you add the same sound from TikTok's or Instagram's own music library (which covers the license there). Business accounts on those platforms are generally limited to the commercial music library. Need It is an explicit track, and its lyrics have not been checked for this window.
+
+```
+python3 src/hype/beats.py song.mp3 src/hype/beats/<song>.beats.json   # constant-tempo beat grid (numpy + scipy)
+python3 src/hype/edits.py src/hype/beats src/hype                      # writes <edit>.html + <edit>.clip.json
+node src/hype/render.mjs $PWD/src/hype/hype1-flashing.html /tmp/f frames 60
+python3 src/hype/mix.py song.mp3 src/hype/hype1-flashing.clip.json /tmp/f/cues.json /tmp/a.wav
+ffmpeg -framerate 60 -i /tmp/f/f_%05d.jpg -i /tmp/a.wav -c:v libx264 -crf 17 -pix_fmt yuv420p -c:a aac -b:a 256k -shortest out.mp4
+```
+
+The timelines in `edits.py` are written in beats, so any of them can be re-cut to another song: run `beats.py` on it and change `song` and `anchor` (the edit beat that should land on the drop).

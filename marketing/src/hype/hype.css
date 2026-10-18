@@ -1,0 +1,78 @@
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+body { font-family: "Inter", sans-serif; -webkit-font-smoothing: antialiased; }
+.stage { position: absolute; inset: 0; overflow: hidden; background: #000; }
+.world { position: absolute; inset: 0; transform-origin: 50% 50%; }
+.shot { position: absolute; inset: 0; overflow: hidden; transform-origin: 50% 50%; will-change: transform, opacity, filter; }
+.cam { position: absolute; inset: 0; transform-origin: 50% 50%; transform-style: preserve-3d; }
+
+/* backgrounds */
+.bg-dark { background: #050507; color: #f5f5f7; }
+.bg-light { background: #fff; color: #0b0b0f; }
+.bg-blue { background: linear-gradient(160deg, #0a84ff, #0040dd); color: #fff; }
+.glowbg { position: absolute; inset: -20%; pointer-events: none; }
+.bg-dark .glowbg { background: radial-gradient(circle at 50% 42%, rgba(10,132,255,0.38), rgba(10,132,255,0.08) 36%, transparent 60%); }
+.bg-light .glowbg { background: radial-gradient(circle at 50% 42%, rgba(10,132,255,0.12), transparent 55%); }
+.bg-blue .glowbg { background: radial-gradient(circle at 50% 30%, rgba(255,255,255,0.28), transparent 55%); }
+
+/* phone */
+.dev { position: absolute; left: 50%; top: 50%; width: 700px; height: 1500px; margin: -750px 0 0 -350px; border-radius: 108px; background: #0d0d0f; padding: 20px;
+  box-shadow: 0 80px 160px rgba(0,0,0,0.55), 0 0 0 3px #2c2c30, 0 0 120px rgba(10,132,255,0.35), inset 0 0 0 2px #3a3a3e; }
+.bg-light .dev { box-shadow: 0 70px 140px rgba(16,24,40,0.28), 0 0 0 3px #d2d2d7, inset 0 0 0 2px #3a3a3e; }
+.scr { position: relative; width: 100%; height: 100%; border-radius: 90px; overflow: hidden; background: #fff; }
+.scr img { position: absolute; left: 0; top: 0; width: 100%; }
+.island { position: absolute; top: 24px; left: 50%; width: 200px; height: 58px; margin-left: -100px; background: #000; border-radius: 30px; z-index: 5; }
+
+/* macro close-up of the UI */
+.macro { position: absolute; left: 70px; top: 160px; width: 940px; height: 1600px; border-radius: 72px; overflow: hidden; background: #fff;
+  box-shadow: 0 60px 140px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.08), 0 0 140px rgba(10,132,255,0.3); }
+.macro img { position: absolute; left: 0; top: 0; }
+
+/* kinetic type */
+.type { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; display: grid; gap: 6px; }
+.ln { font: 900 196px/0.98 "Inter Display", "Inter", sans-serif; letter-spacing: -0.045em; white-space: nowrap; }
+.ln .sp { width: 0.26em; }
+.type.xl .ln { font-size: 360px; letter-spacing: -0.06em; }
+.type.md .ln { font-size: 150px; }
+.type.sm .ln { font-size: 118px; letter-spacing: -0.045em; }
+.ln span { display: inline-block; will-change: transform, opacity, filter; }
+.ln.blue span { background: linear-gradient(180deg, #5ac8fa, #0a84ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.bg-blue .ln.blue span { background: none; color: #0b0b0f; -webkit-background-clip: border-box; }
+.kicker { position: absolute; left: 0; right: 0; top: 1330px; text-align: center; font: 600 46px/1.2 "Inter", sans-serif; letter-spacing: 0.02em; opacity: 0.7; text-transform: uppercase; }
+
+/* counter */
+.counter { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; }
+.cl { font: 700 54px/1 "Inter", sans-serif; letter-spacing: 0.18em; text-transform: uppercase; color: #5ac8fa; }
+.bg-light .cl { color: #0a84ff; }
+.cv { font: 900 300px/1 "Inter Display", "Inter", sans-serif; letter-spacing: -0.06em; margin: 30px 0; font-variant-numeric: tabular-nums;
+  background: linear-gradient(180deg, #fff, #9fd2ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.bg-light .cv { background: linear-gradient(180deg, #0b0b0f, #0a84ff); -webkit-background-clip: text; background-clip: text; }
+.cv small { font-size: 0.42em; letter-spacing: -0.03em; margin-left: 0.12em; }
+.cs { font: 500 50px/1.2 "Inter", sans-serif; opacity: 0.7; }
+
+/* 3D carousel */
+.stack { position: absolute; inset: 0; perspective: 2400px; transform-style: preserve-3d; }
+.card { position: absolute; left: 50%; top: 50%; width: 600px; height: 1298px; border-radius: 70px; overflow: hidden; background: #fff;
+  box-shadow: 0 50px 120px rgba(0,0,0,0.55), 0 0 0 10px #0d0d0f, 0 0 0 12px #333; backface-visibility: hidden; }
+.card img { width: 100%; }
+
+/* rank ladder */
+.ladder { position: absolute; left: 110px; right: 110px; top: 50%; transform: translateY(-50%); display: grid; gap: 26px; }
+.rung { position: relative; padding: 34px 50px 34px 80px; border-radius: 40px; font: 900 96px/1 "Inter Display", "Inter", sans-serif; letter-spacing: -0.04em;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c) 40%, #111), #111 80%); color: #fff; box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--c) 70%, transparent), 0 0 60px color-mix(in srgb, var(--c) 30%, transparent); }
+.rung span { position: absolute; left: 0; top: 0; bottom: 0; width: 22px; border-radius: 40px 0 0 40px; background: var(--c); }
+
+/* end card */
+.endc { position: absolute; inset: 0; display: grid; justify-items: center; align-content: center; gap: 40px; padding-bottom: 120px; }
+.endc .mark { width: 230px; height: 230px; border-radius: 58px; background: linear-gradient(160deg, #0a84ff, #0057d9); display: grid; place-items: center;
+  box-shadow: 0 30px 80px rgba(0,87,217,0.5), 0 0 160px rgba(10,132,255,0.5), inset 0 2px 0 rgba(255,255,255,0.35); }
+.endc .mark svg { width: 146px; height: 146px; fill: none; stroke: #fff; stroke-width: 1.5; stroke-linecap: round; }
+.endc .word { font: 800 132px/1 "Inter Display", "Inter", sans-serif; letter-spacing: -0.035em; }
+.endc .line { font: 500 48px/1.25 "Inter", sans-serif; opacity: 0.75; text-align: center; padding: 0 80px; }
+.endc .cta { position: absolute; left: 50%; top: 1340px; padding: 44px 80px; border-radius: 999px; background: #0a84ff; color: #fff; white-space: nowrap; overflow: hidden;
+  font: 700 52px/1 "Inter", sans-serif; letter-spacing: -0.015em; box-shadow: 0 24px 60px rgba(10,132,255,0.5); }
+.endc .cta i { position: absolute; top: -20px; bottom: -20px; left: 0; width: 120px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent); }
+.endc .fine { position: absolute; left: 0; right: 0; top: 1520px; text-align: center; font: 500 36px "Inter", sans-serif; opacity: 0.55; }
+
+.flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 1000; }
+.vignette { position: absolute; inset: 0; pointer-events: none; z-index: 999; background: radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(0,0,0,0.35)); }
