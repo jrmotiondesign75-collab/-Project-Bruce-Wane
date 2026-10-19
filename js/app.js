@@ -1,5 +1,6 @@
 import { CATEGORIES, DRILLS, SOURCES } from "./drills.js";
 import { QUIZ, QUOTES, CHALLENGES, XP, BADGES, METRICS, TIERS } from "./data.js";
+import { TRIVIA_LEVELS, TRIVIA_COUNTS, drawTrivia } from "./trivia.js";
 import { TRACKS, LESSONS } from "./lessons.js";
 import { dateKey, parseKey, addDays, prettyDate, weekdayOf, weekKey, hashString, DAY_NAMES, formatTime, SESSION_TYPES, programName, recommendSchedule, weeklyFocus, sleepTarget, drill, isProDrill, buildWorkout, isShootingDrill, nutritionTargets, buildMealPlan, planMeal, sleepHours, levelInfo, rankFor, isTrainingDay, streak, bestStreak, ratings } from "./engine.js";
 import { cloud, initCloud, hasSocial, loadPrivate, savePrivate, publishCard, watchCollection, saveMyFeed, saveMyCheers, saveMyComments, removeOthersPost, uploadMedia, saveFile, hasAI, askCoach } from "./cloud.js";
@@ -52,7 +53,7 @@ const fresh = () => ({
   notified: {},
   coachChat: [],
   lessonsDone: {}, // id -> { quiz: true|false }
-  alarms: [], // { id, time, label, kind, days: [0-6], sound, snooze, challenge, on }
+  alarms: [], // { id, time, label, kind, days: [0-6], sound, snooze, challenge, challengeCount, challengeLevel, on }
   alarmFired: {}, // alarm id -> date it last rang
   upOnTime: 0,
   sleepHint: {}, // { bed, bedTs, wake, wakeTs } captured from alarms
@@ -1814,13 +1815,16 @@ function nowHHMM() {
 }
 
 // One full-screen ringing card used by every alarm.
-// opts: { eyebrow, title, sub, stats: [[value, label]], sound, snooze, challenge, primary, onDismiss, onSnooze }
+// opts: { eyebrow, title, sub, stats: [[value, label]], sound, snooze, challenge: { count, level }, test, primary, onDismiss, onSnooze }
 function ringOverlay(opts) {
   if ($(".alarm")) return;
   const r = rankFor(levelInfo(state.xp).level);
   const [clock, ampm] = new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).split(" ");
-  const quizPool = LESSONS.map((l) => l.quiz);
-  let q = null;
+  // Wake-up challenge: the alarm only stops after `need` correct answers. A wrong answer swaps in a new question.
+  const ch = opts.challenge ? { count: 1, level: "medium", ...(typeof opts.challenge === "object" ? opts.challenge : {}) } : null;
+  const need = ch ? ch.count : 0;
+  const seen = new Set();
+  let q = null, got = 0, missed = false;
   const el = document.createElement("div");
   el.className = "overlay alarm";
   el.style.setProperty("--c", r.color);
@@ -1833,7 +1837,10 @@ function ringOverlay(opts) {
       ${opts.stats && opts.stats.length ? `<div class="pc-parts" style="grid-template-columns:repeat(${opts.stats.length},1fr)">${opts.stats.map(([v, k]) => `<div><span class="num">${esc(v)}</span><small>${esc(k)}</small></div>`).join("")}</div>` : ""}
       ${opts.sub ? `<p class="small muted">${esc(opts.sub)}</p>` : ""}
       ${audioCtx && audioCtx.state === "running" ? "" : `<p class="small alarm-sound">Tap anywhere to turn the sound on.</p>`}
-      ${q ? `<div class="alarm-challenge"><p class="eyebrow">Wake-up challenge · answer to stop the alarm</p><strong>${esc(q.q)}</strong>
+      ${q ? `<div class="alarm-challenge"><div class="row-between"><p class="eyebrow">Wake-up challenge · ${esc(TRIVIA_LEVELS[q.level])}</p><p class="eyebrow">${need > 1 ? `Question ${got + 1} of ${need}` : "Answer to stop it"}</p></div>
+        ${need > 1 ? `<div class="trivia-dots" aria-hidden="true">${Array.from({ length: need }, (_, i) => `<span class="${i < got ? "on" : ""}"></span>`).join("")}</div>` : ""}
+        ${missed ? `<p class="small trivia-miss">Not quite. Try this one.</p>` : ""}
+        <strong>${esc(q.q)}</strong>
         <div class="options">${q.options.map((o, i) => `<button class="option" data-q="${i}">${esc(o)}</button>`).join("")}</div></div>` : ""}
       <div class="actions">
         ${opts.snooze ? `<button class="btn ghost" data-a="snooze">Snooze ${opts.snooze} min</button>` : ""}
@@ -1859,20 +1866,34 @@ function ringOverlay(opts) {
     const qi = e.target.closest("[data-q]");
     if (qi && q) {
       if (Number(qi.dataset.q) === q.answer) {
-        stop();
-        award(XP.alarmChallenge, "Challenge beaten");
-        opts.onDismiss && opts.onDismiss();
+        got++;
+        missed = false;
+        if (got >= need) {
+          stop();
+          // harder and longer challenges pay more
+          const mult = { easy: 1, medium: 1.5, hard: 2, mixed: 1.5 }[ch.level] || 1;
+          if (!opts.test) {
+            award(Math.round(XP.alarmChallenge * need * mult), "Challenge beaten");
+            save();
+          }
+          opts.onDismiss && opts.onDismiss();
+          return;
+        }
+        qi.classList.add("right");
+        q = drawTrivia(ch.level, seen);
+        setTimeout(draw, 300);
       } else {
+        missed = true;
         el.querySelector(".alarm-card").classList.add("shake");
-        q = quizPool[Math.floor(Math.random() * quizPool.length)];
+        q = drawTrivia(ch.level, seen);
         setTimeout(draw, 350);
       }
       return;
     }
     const a = e.target.closest("[data-a]")?.dataset.a;
     if (!a) return;
-    if (a === "go" && opts.challenge && !q) {
-      q = quizPool[Math.floor(Math.random() * quizPool.length)];
+    if (a === "go" && ch && !q) {
+      q = drawTrivia(ch.level, seen);
       draw();
       return;
     }
@@ -1971,7 +1992,7 @@ function suggestedBedtime() {
 function fireAlarm(a, test = false) {
   const target = isPlayer() ? sleepTarget(state.profile.age) : 8;
   const x = isPlayer() ? derived() : { streak: 0 };
-  const base = { sound: a.sound, snooze: a.kind === "bedtime" ? 0 : a.snooze || 9, challenge: a.challenge };
+  const base = { test, sound: a.sound, snooze: a.kind === "bedtime" ? 0 : a.snooze || 9, challenge: a.challenge ? { count: a.challengeCount || 1, level: a.challengeLevel || "medium" } : false };
   if (a.kind === "wake") {
     const e = isPlayer() ? todayEntry() : null;
     ringOverlay({
@@ -2070,7 +2091,7 @@ function viewAlarms() {
     <li class="alarm-row ${a.on ? "" : "off"} kind-${a.kind}">
       <button class="alarm-main" data-action="alarm-edit" data-id="${a.id}">
         <span class="alarm-clock num">${splitTime(a.time)}</span>
-        <span class="who"><strong>${esc(a.label || ALARM_KINDS[a.kind])}</strong><small>${daysText(a.days)} · ${SOUNDS[a.sound] || "Buzzer"}${a.challenge ? " · Challenge" : ""}</small></span>
+        <span class="who"><strong>${esc(a.label || ALARM_KINDS[a.kind])}</strong><small>${daysText(a.days)} · ${SOUNDS[a.sound] || "Buzzer"}${a.challenge ? ` · ${a.challengeCount || 1} ${(TRIVIA_LEVELS[a.challengeLevel] || "Medium").toLowerCase()} question${(a.challengeCount || 1) > 1 ? "s" : ""}` : ""}</small></span>
       </button>
       <label class="switch" for="alarm-on-${a.id}"><input id="alarm-on-${a.id}" type="checkbox" data-alarm-on="${a.id}" ${a.on ? "checked" : ""}><span class="sr">On</span></label>
     </li>`).join("")}
@@ -2113,7 +2134,14 @@ function openAlarmEditor(a) {
       <label for="alarm-sound">Sound<select id="alarm-sound">${Object.entries(SOUNDS).map(([k, l]) => `<option value="${k}" ${a.sound === k ? "selected" : ""}>${l}</option>`).join("")}</select></label>
       <label for="alarm-snooze">Snooze<select id="alarm-snooze">${[5, 9, 15].map((m) => `<option value="${m}" ${(a.snooze || 9) === m ? "selected" : ""}>${m} min</option>`).join("")}</select></label>
     </div>
-    <label class="switch" for="alarm-challenge"><input id="alarm-challenge" type="checkbox" ${a.challenge ? "checked" : ""}><span>Wake-up challenge: answer a hoops question to stop it</span></label>
+    <label class="switch" for="alarm-challenge"><input id="alarm-challenge" type="checkbox" ${a.challenge ? "checked" : ""}><span>Wake-up challenge: answer basketball trivia to turn it off</span></label>
+    <div class="challenge-opts">
+      <p class="eyebrow">Questions to answer</p>
+      <div class="seg seg-4" role="radiogroup" aria-label="Questions to answer" id="alarm-qcount">${TRIVIA_COUNTS.map((n) => `<button type="button" role="radio" aria-checked="${(a.challengeCount || 1) === n}" class="${(a.challengeCount || 1) === n ? "active" : ""}" data-action="alarm-seg" data-v="${n}">${n}</button>`).join("")}</div>
+      <p class="eyebrow">Difficulty</p>
+      <div class="seg seg-4" role="radiogroup" aria-label="Difficulty" id="alarm-qlevel">${Object.entries(TRIVIA_LEVELS).map(([k, l]) => `<button type="button" role="radio" aria-checked="${(a.challengeLevel || "medium") === k}" class="${(a.challengeLevel || "medium") === k ? "active" : ""}" data-action="alarm-seg" data-v="${k}">${l}</button>`).join("")}</div>
+      <p class="small muted">Get them right to stop the alarm. A wrong answer swaps in a new question. Harder and longer challenges earn more XP.</p>
+    </div>
     <div class="actions">
       <button type="button" class="btn ghost" data-action="alarm-preview">Preview sound</button>
       <button type="button" class="btn ghost" data-action="alarm-test">Test alarm</button>
@@ -2136,6 +2164,8 @@ function alarmFromForm(f) {
     sound: f.querySelector("#alarm-sound").value,
     snooze: Number(f.querySelector("#alarm-snooze").value),
     challenge: f.querySelector("#alarm-challenge").checked,
+    challengeCount: Number(f.querySelector("#alarm-qcount .active")?.dataset.v) || 1,
+    challengeLevel: f.querySelector("#alarm-qlevel .active")?.dataset.v || "medium",
     on: true,
   };
 }
@@ -2599,6 +2629,12 @@ function onClick(e) {
       });
       break;
     }
+    case "alarm-seg":
+      btn.parentElement.querySelectorAll("button").forEach((b) => {
+        b.classList.toggle("active", b === btn);
+        b.setAttribute("aria-checked", b === btn);
+      });
+      break;
     case "alarm-preview":
       primeAudio();
       playSound($("#alarm-sound").value);

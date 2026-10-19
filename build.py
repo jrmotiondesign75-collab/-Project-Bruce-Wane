@@ -10,7 +10,7 @@ import pathlib
 import re
 
 ROOT = pathlib.Path(__file__).parent
-MODULES = ["js/drills.js", "js/lessons.js", "js/data.js", "js/engine.js", "js/cloud.js", "js/app.js"]
+MODULES = ["js/drills.js", "js/lessons.js", "js/data.js", "js/trivia.js", "js/engine.js", "js/cloud.js", "js/app.js"]
 
 
 def strip_module_syntax(src: str) -> str:

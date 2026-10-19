@@ -769,7 +769,19 @@ span.alarm-main { cursor: default; }
 /* Appearance picker in Settings */
 .appearance-row { display: grid; gap: 8px; font-weight: 600; }
 .seg-3 { grid-template-columns: repeat(3, 1fr); }
+.seg-4 { grid-template-columns: repeat(4, 1fr); }
+.seg-4 button { padding: 10px 4px; letter-spacing: 0.04em; }
+/* wake-up challenge settings only show while the challenge is switched on */
+.challenge-opts { display: grid; gap: 8px; padding: 12px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); }
+.challenge-opts .eyebrow { margin: 4px 0 0; }
+#alarm-form:has(#alarm-challenge:not(:checked)) .challenge-opts { display: none; }
+.trivia-dots { display: flex; gap: 6px; justify-content: center; margin: 6px 0 10px; }
+.trivia-dots span { width: 28px; height: 6px; border-radius: 99px; background: var(--line); }
+.trivia-dots span.on { background: var(--good); }
+.trivia-miss { color: var(--bad, #ff453a); font-weight: 700; margin: 0 0 6px; }
 
 /* New-player preview banner (#welcome) */
 .preview-pill { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 999px; background: var(--accent-soft); color: var(--ink); font-size: 0.85rem; font-weight: 600; }
 .preview-pill .link { color: var(--accent); font-weight: 700; }
+.alarm-challenge .row-between { gap: 10px; align-items: flex-start; }
+.alarm-challenge .row-between .eyebrow:last-child { white-space: nowrap; }
