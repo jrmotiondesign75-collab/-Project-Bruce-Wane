@@ -44,7 +44,7 @@ export function fakeStripe() {
       db.customers[c.id] = c;
       s.status = "complete";
       s.customer = c.id;
-      db.subs.push({ id: id("sub"), customer: c.id, status: s.trial ? "trialing" : "active", items: { data: [{ current_period_end: Math.floor(Date.now() / 1000) + 30 * 86400 }] } });
+      db.subs.push({ id: id("sub"), customer: c.id, status: s.trial ? "trialing" : "active", items: { data: [{ current_period_end: Math.floor(Date.now() / 1000) + (s.trial || 30) * 86400 }] } });
       return s;
     },
     cancel(customer) {
@@ -88,7 +88,7 @@ export function start({ fake = !!process.env.FAKE_STRIPE } = {}) {
     if (url.pathname.startsWith("/app/")) {
       const file = path.join(HERE, "..", "dist", path.basename(url.pathname));
       if (!fs.existsSync(file)) return res.status(404).end("Build the app first");
-      res.setHeader("Content-Type", "text/html");
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
       return res.end(fs.readFileSync(file));
     }
     if (stripe && url.pathname === "/fake-checkout") {
@@ -102,12 +102,12 @@ export function start({ fake = !!process.env.FAKE_STRIPE } = {}) {
         res.writeHead(303, { Location: s.success_url.replace("{CHECKOUT_SESSION_ID}", s.id) });
         return res.end();
       }
-      res.setHeader("Content-Type", "text/html");
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
       return res.end(`<!doctype html><title>Fake checkout</title><h1>Fake Stripe checkout</h1><p>Price ${s.price}${s.trial ? `, ${s.trial}-day trial` : ""}</p>
         <form method="post"><input name="email" value="player@example.com"><button id="pay">Pay</button></form><a id="back" href="${s.cancel_url}">Back</a>`);
     }
     if (stripe && url.pathname === "/fake-portal") {
-      res.setHeader("Content-Type", "text/html");
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
       return res.end(`<!doctype html><title>Fake portal</title><h1>Fake billing portal</h1><p>${url.searchParams.get("c")}</p><a id="back" href="${url.searchParams.get("r")}">Back</a>`);
     }
     res.status(404).end("Not found");

@@ -4,7 +4,7 @@ Five small serverless functions that connect the Courtside paywall to Stripe. Th
 
 | Function | What it does |
 | --- | --- |
-| `POST /api/checkout` | Starts a Stripe Checkout page for the $5.99/month subscription |
+| `POST /api/checkout` | Starts a Stripe Checkout page for the $5.99/month subscription with a 7-day free trial |
 | `GET /api/session?id=cs_…` | Confirms a finished checkout and returns the subscriber's Stripe customer ID |
 | `GET /api/entitlement?customer=cus_…` | Checks whether a subscriber is still paid up. The app calls this on every launch |
 | `POST /api/portal` | Opens Stripe's billing page, where subscribers update their card, see invoices or cancel |
@@ -23,7 +23,7 @@ Five small serverless functions that connect the Courtside paywall to Stripe. Th
    - `STRIPE_SECRET_KEY`: your `sk_test_…` key (later `sk_live_…`)
    - `STRIPE_PRICE_ID`: the `price_…` ID from step 2
    - `APP_URL`: the exact address where the app is hosted, e.g. `https://courtside.app/`
-   - `TRIAL_DAYS` (optional): free-trial length, if you want one
+   - `TRIAL_DAYS` (optional): free-trial length in days. The default is 7; set `0` for no trial. If you change it, build the app with the matching `--trial-days`
 5. **Build the app against it** and host `dist/courtside-premium.html` at `APP_URL`:
    ```
    python3 build.py --theme premium --billing stripe --api https://YOUR-BILLING.vercel.app \
@@ -42,6 +42,8 @@ open http://localhost:8787/app/courtside-premium.html
 ```
 
 ## Notes
+
+- **Free trial:** players enter their card at checkout but aren't charged. Stripe charges $5.99 automatically when day 7 ends and every month after, unless they cancel first. To send a reminder email before the trial ends, turn it on in the Stripe dashboard (Settings → Billing → Subscriptions and emails). Each new checkout gets its own trial, so someone could start another trial with a different email. Stripe Radar and card checks catch most repeat abuse.
 
 - **Native app stores:** if Courtside ships as an iPhone or Android app, Apple and Google generally require their own in-app purchase system for digital subscriptions, and they take a 15–30% cut. Rules vary by country (in the US, apps may now also link out to web checkout). This Stripe setup is for the web app.
 - **Restore by email** trusts the email address someone types in. That's fine to launch with. Before you scale, swap it for an emailed sign-in link (Stripe's customer portal can send one).

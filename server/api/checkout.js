@@ -1,9 +1,9 @@
 // POST → { url } — a Stripe Checkout page for the monthly subscription.
-import { stripe, returnUrl, handler } from "../lib/billing.js";
+import { stripe, returnUrl, handler, trialLength } from "../lib/billing.js";
 
 export default handler(["POST"], async (req, res) => {
   const back = returnUrl();
-  const trialDays = Number(process.env.TRIAL_DAYS) || 0;
+  const trialDays = trialLength();
   const session = await stripe().checkout.sessions.create({
     mode: "subscription",
     line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],

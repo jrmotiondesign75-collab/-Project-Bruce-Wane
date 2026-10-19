@@ -808,3 +808,4 @@ span.alarm-main { cursor: default; }
 .pw-restore { display: grid; gap: 10px; text-align: left; }
 .pw-restore[hidden] { display: none; }
 .pw-fine { margin: 0; line-height: 1.45; }
+.pw-trial { margin: 8px 0 0; font: 800 1.05rem var(--display); color: var(--good); }

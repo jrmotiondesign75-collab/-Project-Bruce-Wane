@@ -538,9 +538,10 @@ function viewPaywall() {
     <ul class="pw-features">${features.map(([t, d]) => `<li><span class="pw-check" aria-hidden="true">✓</span><div><strong>${esc(t)}</strong><small>${esc(d)}</small></div></li>`).join("")}</ul>
     <div class="pw-price">
       <div><span class="num">${esc(BILLING.price)}</span><small>/ ${esc(BILLING.period)}</small></div>
-      <p class="small muted">${trial ? `${BILLING.trialDays}-day free trial, then ${esc(BILLING.price)} a ${esc(BILLING.period)}. ` : ""}Cancel anytime.</p>
+      ${trial ? `<p class="pw-trial">${BILLING.trialDays} days free</p>` : ""}
+      <p class="small muted">${trial ? `Then ${esc(BILLING.price)} a ${esc(BILLING.period)}, starting ${esc(trialEndText())}. ` : ""}Cancel anytime.</p>
     </div>
-    <button class="btn primary pw-cta" data-action="subscribe" ${billingBusy ? "disabled" : ""}>${billingBusy ? "Opening checkout…" : trial ? "Start free trial" : `Subscribe for ${esc(BILLING.price)}/${esc(BILLING.period)}`}</button>
+    <button class="btn primary pw-cta" data-action="subscribe" ${billingBusy ? "disabled" : ""}>${billingBusy ? "Opening checkout…" : trial ? `Start ${BILLING.trialDays}-day free trial` : `Subscribe for ${esc(BILLING.price)}/${esc(BILLING.period)}`}</button>
     ${BILLING.mode === "demo" ? `<p class="small pw-demo">Preview mode: this is a practice checkout. No card is asked for and nothing is charged.</p>` : ""}
     <div class="pw-links">
       <button class="link" data-action="restore-open">Restore purchase</button>${links.length ? " · " + links.join(" · ") : ""}
@@ -549,9 +550,12 @@ function viewPaywall() {
       <label for="restore-email">Email you subscribed with<input id="restore-email" type="email" required autocomplete="email" placeholder="you@example.com"></label>
       <button class="btn ghost" type="submit">Find my subscription</button>
     </form>
-    <p class="small muted pw-fine">${BILLING.mode === "stripe" ? "Payments are processed securely by Stripe. " : ""}Your membership renews automatically each ${esc(BILLING.period)} until you cancel. Cancel anytime from Me → Subscription.</p>
+    <p class="small muted pw-fine">${trial ? `You won't be charged today. Your trial ends ${esc(trialEndText())}, then ${esc(BILLING.price)} is charged each ${esc(BILLING.period)}. Cancel before then and you pay nothing. ` : `Your membership renews automatically each ${esc(BILLING.period)} until you cancel. `}${BILLING.mode === "stripe" ? "Payments are processed securely by Stripe. " : ""}Cancel anytime from Me → Subscription.</p>
   </section>`;
 }
+
+const longDate = (ms) => new Date(ms).toLocaleDateString("en-US", { month: "long", day: "numeric" });
+const trialEndText = () => longDate(Date.now() + BILLING.trialDays * 86400000);
 
 function subscriptionPanel() {
   if (BILLING.mode === "off") return "";
@@ -559,7 +563,7 @@ function subscriptionPanel() {
   const until = sub && sub.until ? new Date(sub.until).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
   return `<section class="panel">
     <p class="eyebrow">Subscription</p>
-    <div class="row-between"><div><strong>Courtside membership</strong><p class="small muted">${esc(BILLING.price)} / ${esc(BILLING.period)}${until ? ` · renews or ends ${until}` : ""}${sub && sub.demo ? " · preview" : ""}</p></div><span class="chip active">Active</span></div>
+    <div class="row-between"><div><strong>Courtside membership</strong><p class="small muted">${sub && sub.trial && sub.until ? `Free trial ends ${esc(longDate(sub.until))}, then ${esc(BILLING.price)} / ${esc(BILLING.period)}` : `${esc(BILLING.price)} / ${esc(BILLING.period)}${until ? ` · renews or ends ${until}` : ""}`}${sub && sub.demo ? " · preview" : ""}</p></div><span class="chip active">${sub && sub.trial ? "Free trial" : "Active"}</span></div>
     <div class="actions">${sub && sub.demo ? `<button class="btn ghost" data-action="cancel-demo">Cancel preview subscription</button>` : `<button class="btn ghost" data-action="manage-sub">Manage or cancel</button>`}</div>
   </section>`;
 }
@@ -576,7 +580,7 @@ async function subscribe() {
       billingBusy = false;
       location.hash = isPlayer() ? "#plan" : "#home";
       render();
-      toast("Welcome to Courtside. Your membership is active.");
+      toast(sub.trial ? `Your ${BILLING.trialDays}-day free trial has started. Welcome to Courtside.` : "Welcome to Courtside. Your membership is active.");
     }
   } catch (err) {
     billingBusy = false;
@@ -2966,7 +2970,7 @@ checkReminders();
       state.sub = fromCheckout;
       save();
       render();
-      if (fromCheckout.active) toast("Welcome to Courtside. Your membership is active.");
+      if (fromCheckout.active) toast(fromCheckout.trial ? `Your ${BILLING.trialDays}-day free trial has started. Welcome to Courtside.` : "Welcome to Courtside. Your membership is active.");
     } else if (state.sub && state.sub.customer) {
       state.sub = await refreshSubscription(state.sub);
       save();

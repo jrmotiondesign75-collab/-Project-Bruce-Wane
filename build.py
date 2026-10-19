@@ -31,7 +31,7 @@ def main() -> None:
                         help="paywall: off (free), demo (practice checkout, no charge) or stripe (real checkout via --api)")
     parser.add_argument("--api", default="", help="billing server URL for --billing stripe, e.g. https://courtside-billing.vercel.app")
     parser.add_argument("--price", default="$5.99", help="price shown on the paywall (must match the Stripe price)")
-    parser.add_argument("--trial-days", type=int, default=0, help="free trial length shown on the paywall (must match the server's TRIAL_DAYS)")
+    parser.add_argument("--trial-days", type=int, default=7, help="free trial length shown on the paywall, 0 for none (must match the server's TRIAL_DAYS)")
     parser.add_argument("--terms", default="", help="terms of service URL shown on the paywall")
     parser.add_argument("--privacy", default="", help="privacy policy URL shown on the paywall")
     args = parser.parse_args()
@@ -49,7 +49,8 @@ def main() -> None:
     fonts = re.search(r'<link rel="stylesheet" href="(https://fonts\.googleapis\.com[^"]+)"', html).group(1)
     config_script = f"<script>window.COURTSIDE = {json.dumps(config)};</script>\n" if config else ""
     font_link = f'<link rel="stylesheet" href="{fonts}">\n' if theme["fonts"] else ""
-    page = f"""<title>{theme["title"]}</title>
+    page = f"""<meta charset="utf-8">
+<title>{theme["title"]}</title>
 {font_link}<style>
 {css}
 </style>

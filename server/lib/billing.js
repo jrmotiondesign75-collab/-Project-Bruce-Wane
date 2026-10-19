@@ -3,7 +3,7 @@
 //   STRIPE_SECRET_KEY  sk_live_… or sk_test_…  (never ship this to the app)
 //   STRIPE_PRICE_ID    price_… for the $5.99/month subscription
 //   APP_URL            where the app is hosted, e.g. https://courtside.app (CORS origin + return address)
-//   TRIAL_DAYS         optional free trial length (0 or unset = no trial)
+//   TRIAL_DAYS         free trial length in days (default 7; set 0 for no trial)
 import Stripe from "stripe";
 
 let client = null;
@@ -41,13 +41,17 @@ export function fail(res, status, error) {
   res.status(status).json({ error });
 }
 
+// Stripe collects the card at checkout and charges automatically when the trial ends.
+export const trialLength = () => (process.env.TRIAL_DAYS === undefined || process.env.TRIAL_DAYS === "" ? 7 : Math.max(0, Number(process.env.TRIAL_DAYS) || 0));
+
 const ACTIVE = new Set(["active", "trialing"]);
 
-// Summarize a customer's subscriptions: active if any is active or trialing; `until` = end of the paid period (ms).
+// Summarize a customer's subscriptions: active if any is active or trialing; `until` = end of the current period
+// (the trial end date while trialing), in ms; `trial` = still in the free trial.
 export function summarize(subs) {
   const live = subs.filter((s) => ACTIVE.has(s.status));
   const ends = live.map((s) => s.current_period_end ?? s.items?.data?.[0]?.current_period_end ?? 0);
-  return { active: live.length > 0, until: live.length ? Math.max(...ends) * 1000 : null };
+  return { active: live.length > 0, trial: live.length > 0 && live.every((s) => s.status === "trialing"), until: live.length ? Math.max(...ends) * 1000 : null };
 }
 
 export async function customerStatus(customer) {
