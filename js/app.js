@@ -1,6 +1,7 @@
 import { CATEGORIES, DRILLS, SOURCES } from "./drills.js";
 import { QUIZ, QUOTES, CHALLENGES, XP, BADGES, METRICS, TIERS } from "./data.js";
 import { TRIVIA_LEVELS, TRIVIA_COUNTS, drawTrivia } from "./trivia.js";
+import { BILLING, isEntitled, startCheckout, completeCheckoutFromUrl, refreshSubscription, restoreByEmail, openBillingPortal } from "./billing.js";
 import { TRACKS, LESSONS } from "./lessons.js";
 import { dateKey, parseKey, addDays, prettyDate, weekdayOf, weekKey, hashString, DAY_NAMES, formatTime, SESSION_TYPES, programName, recommendSchedule, weeklyFocus, sleepTarget, drill, isProDrill, buildWorkout, isShootingDrill, nutritionTargets, buildMealPlan, planMeal, sleepHours, levelInfo, rankFor, isTrainingDay, streak, bestStreak, ratings } from "./engine.js";
 import { cloud, initCloud, hasSocial, loadPrivate, savePrivate, publishCard, watchCollection, saveMyFeed, saveMyCheers, saveMyComments, removeOthersPost, uploadMedia, saveFile, hasAI, askCoach } from "./cloud.js";
@@ -58,6 +59,7 @@ const fresh = () => ({
   upOnTime: 0,
   sleepHint: {}, // { bed, bedTs, wake, wakeTs } captured from alarms
   seenStories: [],
+  sub: null, // subscription: { customer, active, until, checked, demo }
   updatedAt: 0,
 });
 
@@ -507,6 +509,80 @@ function finishQuiz() {
     location.hash = isPlayer() ? "#plan" : "#home";
     render();
   }, steps.length * 550 + 500);
+}
+
+// ---------- Paywall ----------
+
+const locked = () => !!state.profile && !isEntitled(state.sub);
+let billingBusy = false;
+
+function viewPaywall() {
+  const p = state.profile;
+  const trial = BILLING.trialDays > 0;
+  const features = [
+    ["A plan built around your game", p.role === "coach" ? "Lessons, drills and ranks for your whole team" : `${programName(p)}: a weekly schedule with 70+ drills from top programs`],
+    ["Wake-up alarm with a trivia challenge", "Answer basketball questions to turn it off"],
+    ["Nutrition targets and meal plans", "Built for your goals, checked off as you eat"],
+    ["Sleep and recovery tracking", "Hit your sleep goal and recover like a pro"],
+    ["25 lessons on skill, body and mind", "About three minutes each, with a quick check for XP"],
+    ["XP, ranks and your team leaderboard", "Climb from Bronze to Legend"],
+    ...(hasAI() ? [["AI coach", "Reviews every workout and tells you what to fix"]] : []),
+  ];
+  const links = [BILLING.terms && `<a class="link" href="${esc(BILLING.terms)}" target="_blank" rel="noopener">Terms</a>`, BILLING.privacy && `<a class="link" href="${esc(BILLING.privacy)}" target="_blank" rel="noopener">Privacy</a>`].filter(Boolean);
+  return `<section class="paywall">
+    ${previewPill()}
+    <div class="pw-mark" aria-hidden="true">${icon("train")}</div>
+    <p class="eyebrow">Courtside membership</p>
+    <h1 class="display">Your program is ready.</h1>
+    <p class="muted">${p.role === "coach" ? "Unlock Courtside for you and your players." : `Unlock <b>${esc(programName(p))}</b> and everything that comes with it.`}</p>
+    <ul class="pw-features">${features.map(([t, d]) => `<li><span class="pw-check" aria-hidden="true">✓</span><div><strong>${esc(t)}</strong><small>${esc(d)}</small></div></li>`).join("")}</ul>
+    <div class="pw-price">
+      <div><span class="num">${esc(BILLING.price)}</span><small>/ ${esc(BILLING.period)}</small></div>
+      <p class="small muted">${trial ? `${BILLING.trialDays}-day free trial, then ${esc(BILLING.price)} a ${esc(BILLING.period)}. ` : ""}Cancel anytime.</p>
+    </div>
+    <button class="btn primary pw-cta" data-action="subscribe" ${billingBusy ? "disabled" : ""}>${billingBusy ? "Opening checkout…" : trial ? "Start free trial" : `Subscribe for ${esc(BILLING.price)}/${esc(BILLING.period)}`}</button>
+    ${BILLING.mode === "demo" ? `<p class="small pw-demo">Preview mode: this is a practice checkout. No card is asked for and nothing is charged.</p>` : ""}
+    <div class="pw-links">
+      <button class="link" data-action="restore-open">Restore purchase</button>${links.length ? " · " + links.join(" · ") : ""}
+    </div>
+    <form class="pw-restore" id="restore-form" hidden>
+      <label for="restore-email">Email you subscribed with<input id="restore-email" type="email" required autocomplete="email" placeholder="you@example.com"></label>
+      <button class="btn ghost" type="submit">Find my subscription</button>
+    </form>
+    <p class="small muted pw-fine">${BILLING.mode === "stripe" ? "Payments are processed securely by Stripe. " : ""}Your membership renews automatically each ${esc(BILLING.period)} until you cancel. Cancel anytime from Me → Subscription.</p>
+  </section>`;
+}
+
+function subscriptionPanel() {
+  if (BILLING.mode === "off") return "";
+  const sub = state.sub;
+  const until = sub && sub.until ? new Date(sub.until).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+  return `<section class="panel">
+    <p class="eyebrow">Subscription</p>
+    <div class="row-between"><div><strong>Courtside membership</strong><p class="small muted">${esc(BILLING.price)} / ${esc(BILLING.period)}${until ? ` · renews or ends ${until}` : ""}${sub && sub.demo ? " · preview" : ""}</p></div><span class="chip active">Active</span></div>
+    <div class="actions">${sub && sub.demo ? `<button class="btn ghost" data-action="cancel-demo">Cancel preview subscription</button>` : `<button class="btn ghost" data-action="manage-sub">Manage or cancel</button>`}</div>
+  </section>`;
+}
+
+async function subscribe() {
+  if (billingBusy) return;
+  billingBusy = true;
+  render();
+  try {
+    const sub = await startCheckout(); // stripe mode navigates away; demo resolves
+    if (sub) {
+      state.sub = sub;
+      save();
+      billingBusy = false;
+      location.hash = isPlayer() ? "#plan" : "#home";
+      render();
+      toast("Welcome to Courtside. Your membership is active.");
+    }
+  } catch (err) {
+    billingBusy = false;
+    render();
+    toast(`Couldn't open checkout: ${err.message}`, "bad");
+  }
 }
 
 // ---------- Views ----------
@@ -1561,6 +1637,8 @@ function viewMe() {
     <div class="badges">${activeBadges().map((b) => `<div class="badge ${state.badges.includes(b.id) ? "got" : ""}"><strong>${b.name}</strong><small>${b.desc}</small></div>`).join("")}</div>
   </section>
 
+  ${subscriptionPanel()}
+
   <section class="panel settings">
     <p class="eyebrow">Settings</p>
     <div class="appearance-row"><span>Appearance</span>
@@ -2177,6 +2255,7 @@ function notifySystem(title, body) {
 }
 
 function checkReminders() {
+  if (locked()) return;
   checkAlarms();
   const acd = $("#alarm-countdown");
   if (acd) {
@@ -2316,6 +2395,13 @@ function render() {
     app.dataset.route = "quiz";
     return;
   }
+  if (locked()) {
+    $("#nav").hidden = true;
+    $("#topbar").hidden = true;
+    app.innerHTML = viewPaywall();
+    app.dataset.route = "paywall";
+    return;
+  }
   const r = route();
   $("#nav").hidden = false;
   $("#topbar").hidden = false;
@@ -2329,13 +2415,39 @@ function softRender() {
   const a = document.activeElement;
   if (a && $("#app").contains(a) && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) return;
   if ([...document.querySelectorAll("#app video")].some((v) => !v.paused)) return;
-  if (state.profile && ["home", "feed", "ranks", "train"].includes(route()) && !$(".building")) render();
+  if (state.profile && !locked() && ["home", "feed", "ranks", "train"].includes(route()) && !$(".building")) render();
 }
 
 // ---------- Events ----------
 
 function onSubmit(e) {
   const f = e.target;
+  if (f.id === "restore-form") {
+    e.preventDefault();
+    const email = $("#restore-email").value.trim();
+    const b = f.querySelector("button");
+    b.disabled = true;
+    b.textContent = "Checking…";
+    restoreByEmail(email)
+      .then((sub) => {
+        if (sub && sub.active) {
+          state.sub = sub;
+          save();
+          render();
+          toast("Subscription restored. Welcome back.");
+        } else {
+          b.disabled = false;
+          b.textContent = "Find my subscription";
+          toast("No active subscription found for that email.", "bad");
+        }
+      })
+      .catch((err) => {
+        b.disabled = false;
+        b.textContent = "Find my subscription";
+        toast(`Couldn't check right now: ${err.message}`, "bad");
+      });
+    return;
+  }
   if (f.id === "sleep-form") {
     e.preventDefault();
     const bed = f.bed.value, wake = f.wake.value;
@@ -2452,6 +2564,28 @@ function onClick(e) {
   const a = btn.dataset.action;
   const s = state.session;
   switch (a) {
+    case "subscribe":
+      subscribe();
+      break;
+    case "restore-open": {
+      const f = $("#restore-form");
+      if (BILLING.mode === "demo") {
+        toast("Nothing to restore in preview mode. Tap Subscribe to try the checkout.");
+        break;
+      }
+      f.hidden = !f.hidden;
+      if (!f.hidden) $("#restore-email").focus();
+      break;
+    }
+    case "manage-sub":
+      openBillingPortal(state.sub).catch((err) => toast(`Couldn't open billing: ${err.message}`, "bad"));
+      break;
+    case "cancel-demo":
+      state.sub = null;
+      save();
+      render();
+      toast("Preview subscription canceled.");
+      break;
     case "quiz-pick":
       quizNext(btn.dataset.num ? Number(btn.dataset.v) : btn.dataset.v);
       break;
@@ -2822,6 +2956,26 @@ checkCommitments();
 render();
 setInterval(checkReminders, 15000);
 checkReminders();
+
+// Billing: finish a Stripe Checkout return, or re-check an existing subscriber with Stripe on every launch.
+// The saved status is only a fallback for when the server can't be reached.
+(async () => {
+  try {
+    const fromCheckout = await completeCheckoutFromUrl();
+    if (fromCheckout) {
+      state.sub = fromCheckout;
+      save();
+      render();
+      if (fromCheckout.active) toast("Welcome to Courtside. Your membership is active.");
+    } else if (state.sub && state.sub.customer) {
+      state.sub = await refreshSubscription(state.sub);
+      save();
+      render();
+    }
+  } catch (err) {
+    console.warn("Billing check failed", err); // offline: isEntitled() keeps paid-up subscribers in during a short grace period
+  }
+})();
 
 initCloud().then(async () => {
   if (hasSocial() && !PREVIEW) {

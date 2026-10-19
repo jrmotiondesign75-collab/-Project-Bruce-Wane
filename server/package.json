@@ -1,0 +1,8 @@
+{
+  "name": "courtside-billing",
+  "private": true,
+  "type": "module",
+  "description": "Stripe subscription functions for the Courtside paywall (deploy this folder to Vercel).",
+  "scripts": { "setup-stripe": "node setup-stripe.mjs", "test": "node test.mjs" },
+  "dependencies": { "stripe": "^17.0.0" }
+}
